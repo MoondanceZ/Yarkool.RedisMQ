@@ -22,4 +22,11 @@ while (true)
         if (data != null)
             Console.WriteLine("consumer-2 receive message" + JsonConvert.SerializeObject(data));
     });
+
+    //ThreadPool.QueueUserWorkItem(_ =>
+    //{
+    //    var data = cli.XReadGroup("group2", "consumer-2", 5, "x-stream", ">");
+    //    if (data != null)
+    //        Console.WriteLine("consumer-2 receive message" + JsonConvert.SerializeObject(data));
+    //});
 }

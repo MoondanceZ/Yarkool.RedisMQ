@@ -5,7 +5,11 @@ VisualStudioVersion = 17.2.32516.85
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisStreamQueue", "RedisStreamQueue\RedisStreamQueue.csproj", "{8420ED06-82B8-4DAD-926D-25A43890E1AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisStreamQueueConsumer", "RedisStreamQueueConsumer\RedisStreamQueueConsumer.csproj", "{074E1E98-96F2-4318-B820-BEE7D8848CC0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisStreamQueueConsumer", "RedisStreamQueueConsumer\RedisStreamQueueConsumer.csproj", "{074E1E98-96F2-4318-B820-BEE7D8848CC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQ", "RabbitMQ\RabbitMQ.csproj", "{AC26A46A-11EB-430A-BAFB-56535AE854C5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarkool.Redis.Queue", "Yarkool.Redis.Queue\Yarkool.Redis.Queue.csproj", "{B2A6067B-31C9-44E0-9778-B53F93A79A18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{074E1E98-96F2-4318-B820-BEE7D8848CC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{074E1E98-96F2-4318-B820-BEE7D8848CC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{074E1E98-96F2-4318-B820-BEE7D8848CC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC26A46A-11EB-430A-BAFB-56535AE854C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC26A46A-11EB-430A-BAFB-56535AE854C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC26A46A-11EB-430A-BAFB-56535AE854C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC26A46A-11EB-430A-BAFB-56535AE854C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
