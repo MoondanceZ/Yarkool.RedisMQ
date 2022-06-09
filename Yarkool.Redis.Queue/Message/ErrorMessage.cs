@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Yarkool.Redis.Queue.Message
+namespace Yarkool.Redis.Queue
 {
     public class ErrorMessage<TMessage> where TMessage : BaseMessage
     {
@@ -28,6 +28,11 @@ namespace Yarkool.Redis.Queue.Message
         /// 队列组名
         /// </summary>
         public string? GroupName { get; set; }
+
+        /// <summary>
+        /// 消费者名称
+        /// </summary>
+        public string ConsumerName { get; set; } = default!;
 
         /// <summary>
         /// 消息

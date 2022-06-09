@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Yarkool.Redis.Queue.Message
+namespace Yarkool.Redis.Queue
 {
     public class BaseMessage
     {

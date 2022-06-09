@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Yarkool.Redis.Queue.Message;
 
-namespace Yarkool.Redis.Queue.Subscribe
+namespace Yarkool.Redis.Queue
 {
     public interface ISubscribeService
     {

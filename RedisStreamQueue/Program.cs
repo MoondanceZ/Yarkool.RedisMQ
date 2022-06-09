@@ -1,6 +1,23 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using FreeRedis;
+using Microsoft.Extensions.DependencyInjection;
+using Yarkool.Redis.Queue;
+
+var services = new ServiceCollection();
+services.AddRedisQueue(config =>
+{
+    config.UseConsumeErrorQueue(options =>
+    {
+        options.QueueName = "ConsumeErrorQueue";
+    });
+
+    config.RedisOptions = new RedisOptions
+    {
+        Host = "localhost",
+        Prefix = "Test:"
+    };
+});
 
 Console.WriteLine("Hello, World!");
 
@@ -37,14 +54,14 @@ else
 
 var pendingResult = cli.XPending("x-stream", "group1");
 
-var p = cli.XPending("x-stream", "group1", "-", "+", 100000, "consumer-1");
+//var p = cli.XPending("x-stream", "group1", "-", "+", 100000, "consumer-1");
 
 //cli.XAck("x-stream", "group1", "1654697774982-0");
 //cli.XDel("x-stream", "1654697774982-0");
 
 //var data = cli.XClaim("x-stream", "group1", "consumer-2", 3600, p.Select(x => x.id).ToArray());
 
-var p2 = cli.XPending("x-stream", "group1", "-", "+", 1000000, "consumer-2");
+//var p2 = cli.XPending("x-stream", "group1", "-", "+", 1000000, "consumer-2");
 
 while (true)
 {
