@@ -28,7 +28,7 @@ while (true)
     //     }
     // });
 
-    var data = cli.XReadGroup("group1", "consumer-2", 1, 5, false, "x-stream", "0-0")?.FirstOrDefault()?.entries?.FirstOrDefault();
+    var data = cli.XReadGroup("group1", "consumer-2", 1, 5, false, "x-stream", ">")?.FirstOrDefault()?.entries?.FirstOrDefault();
     if (data != null)
     {
         //var messageList = data.

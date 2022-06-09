@@ -2,6 +2,7 @@
 
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
+using RedisStreamQueue;
 using Yarkool.Redis.Queue;
 
 var services = new ServiceCollection();
@@ -68,6 +69,9 @@ while (true)
     var str = Console.ReadLine();
     if (!string.IsNullOrWhiteSpace(str))
     {
-        cli.XAdd("x-stream", "msg", str);
+        cli.XAdd("x-stream", new Dictionary<string, string>
+        {
+            { "InPut", str }
+        });
     }
 }

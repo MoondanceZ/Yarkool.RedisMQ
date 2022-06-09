@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FreeRedis;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace RedisStreamQueue
 {
     internal class TestConsumer : AbstractConsumer<TestMessage>
     {
-        public TestConsumer(QueueConfig queueConfig) : base(queueConfig)
+        public TestConsumer(QueueConfig queueConfig, RedisClient redisClient) : base(queueConfig, redisClient)
         {
         }
 
