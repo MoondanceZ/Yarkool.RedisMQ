@@ -18,5 +18,10 @@ namespace Yarkool.Redis.Queue
         /// 消费者数量
         /// </summary>
         public int ConsumerCount { get; set; } = 1;
+
+        /// <summary>
+        /// 等待超时时间, 默认: 5分钟
+        /// </summary>
+        public int PenddingTimeOut { get; set; } = 5 * 60;
     }
 }
