@@ -16,6 +16,10 @@ namespace Yarkool.Redis.Queue.Subscribe
         /// <returns></returns>
         Action<TMessage> OnMessage<TMessage>() where TMessage : BaseMessage;
 
-
+        /// <summary>
+        /// 发生错误
+        /// </summary>
+        /// <returns></returns>
+        Action OnError();
     }
 }
