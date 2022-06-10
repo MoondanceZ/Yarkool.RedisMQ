@@ -11,12 +11,6 @@ namespace Yarkool.Redis.Queue
         /// <summary>
         /// 时间戳
         /// </summary>
-        public long Timestamp
-        {
-            get
-            {
-                return (DateTime.Now.ToUniversalTime().Ticks - new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero).Ticks) / 10000;
-            }
-        }
+        public long Timestamp { get; set; } = (DateTime.Now.ToUniversalTime().Ticks - new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero).Ticks) / 10000;
     }
 }

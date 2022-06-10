@@ -7,12 +7,18 @@ using System.Threading.Tasks;
 namespace Yarkool.Redis.Queue
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public class QueueQttribute: System.Attribute
+    public class QueueAttribute : System.Attribute
     {
+
+        public QueueAttribute(string queueName)
+        {
+            QueueName = queueName;
+        }
+
         /// <summary>
         /// 队列名称
         /// </summary>
-        public string QueueName { get; set; } = default!;
+        public string QueueName { get; private set; } = default!;
 
         /// <summary>
         /// 消费者数量

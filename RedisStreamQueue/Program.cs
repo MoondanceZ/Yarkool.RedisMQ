@@ -2,11 +2,15 @@
 
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using RedisStreamQueue;
 using Yarkool.Redis.Queue;
 
+var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
+cli.Notice += (s, e) => Console.WriteLine(e.Log);
+
 var services = new ServiceCollection();
-services.AddRedisQueue(config =>
+services.AddRedisQueue(cli, config =>
 {
     config.UseConsumeErrorQueue(options =>
     {
@@ -20,10 +24,12 @@ services.AddRedisQueue(config =>
     };
 });
 
-Console.WriteLine("Hello, World!");
+services.AddTransient<TestProducer>();
 
-var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
-cli.Notice += (s, e) => Console.WriteLine(e.Log);
+using var buildServiceProvider = services.BuildServiceProvider();
+var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
+var testProducer = serviceProvider.GetService<TestProducer>()!;
+
 
 if (!cli.Exists("x-stream"))
 {
@@ -69,9 +75,15 @@ while (true)
     var str = Console.ReadLine();
     if (!string.IsNullOrWhiteSpace(str))
     {
-        cli.XAdd("x-stream", new Dictionary<string, string>
+        // var dic = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(new TestMessage
+        // {
+        //     Input = str,
+        // }));
+        // cli.XAdd("x-stream", dic);
+
+        testProducer.PublishAsync(new TestMessage()
         {
-            { "InPut", str }
-        });
+            Input = str
+        }).ConfigureAwait(false).GetAwaiter();
     }
 }

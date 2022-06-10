@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FreeRedis;
 
 namespace Yarkool.Redis.Queue
 {
@@ -37,6 +38,10 @@ namespace Yarkool.Redis.Queue
                 ErrorQueueOptions = new ErrorQueueOptions();
                 options(ErrorQueueOptions);
             }
+        }
+
+        public void UseRedisClient(Action<RedisClient> client)
+        {
         }
     }
 }
