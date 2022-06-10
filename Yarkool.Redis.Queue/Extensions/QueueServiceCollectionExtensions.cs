@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FreeRedis;
+using Microsoft.Extensions.Logging;
 
 namespace Yarkool.Redis.Queue
 {
@@ -21,6 +22,8 @@ namespace Yarkool.Redis.Queue
             services.AddSingleton(queueConfig);
 
             services.AddTransient<ErrorProducer>();
+
+            services.AddLogging();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);

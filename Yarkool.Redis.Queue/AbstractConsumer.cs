@@ -13,7 +13,7 @@ namespace Yarkool.Redis.Queue
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
         private readonly ErrorProducer _errorProducer;
-        private readonly ILogger<AbstractConsumer<TMessage>>? _logger;
+        private readonly ILogger<AbstractConsumer<TMessage>> _logger;
 
         private readonly string _queueName;
         private readonly string _groupName;
@@ -25,7 +25,7 @@ namespace Yarkool.Redis.Queue
             _queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
             _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
             _errorProducer = IocContainer.Resolve<ErrorProducer>() ?? throw new ArgumentNullException(nameof(ErrorProducer));
-            _logger = IocContainer.Resolve<ILogger<AbstractConsumer<TMessage>>>();
+            _logger = IocContainer.Resolve<ILogger<AbstractConsumer<TMessage>>>() ?? throw new ArgumentNullException(nameof(ErrorProducer));
 
             var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
             ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
