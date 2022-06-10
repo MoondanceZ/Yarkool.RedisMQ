@@ -8,24 +8,24 @@ using System.Text;
 
 namespace Yarkool.Redis.Queue
 {
-    public abstract class AbstractConsumer<TMessage> where TMessage : BaseMessage
+    public abstract class BaseConsumer<TMessage> : IConsumer where TMessage : BaseMessage
     {
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
         private readonly ErrorProducer _errorProducer;
-        private readonly ILogger<AbstractConsumer<TMessage>> _logger;
+        private readonly ILogger<BaseConsumer<TMessage>> _logger;
 
         private readonly string _queueName;
         private readonly string _groupName;
         private readonly string _consumerName;
         private readonly int _consumerCount;
 
-        public AbstractConsumer()
+        public BaseConsumer()
         {
             _queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
             _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
             _errorProducer = IocContainer.Resolve<ErrorProducer>() ?? throw new ArgumentNullException(nameof(ErrorProducer));
-            _logger = IocContainer.Resolve<ILogger<AbstractConsumer<TMessage>>>() ?? throw new ArgumentNullException(nameof(ErrorProducer));
+            _logger = IocContainer.Resolve<ILogger<BaseConsumer<TMessage>>>() ?? throw new ArgumentNullException(nameof(ErrorProducer));
 
             var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
             ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
@@ -46,10 +46,9 @@ namespace Yarkool.Redis.Queue
                 if (!infoGroups.Any(x => x.name == _groupName))
                     _redisClient.XGroupCreate(_queueName, _groupName, MkStream: true);
             }
-
         }
 
-        public Task SubcribeAsync()
+        public void Subscribe()
         {
             for (var i = 0; i < _consumerCount; i++)
             {
@@ -80,7 +79,6 @@ namespace Yarkool.Redis.Queue
                                 {
                                     if (_queueConfig.UseErrorQueue)
                                     {
-
                                         var errorMessage = new ErrorMessage
                                         {
                                             ConsumerName = _consumerName,
@@ -91,12 +89,11 @@ namespace Yarkool.Redis.Queue
                                             QueueName = _queueName,
                                         };
                                         await _errorProducer.PublishAsync(errorMessage);
-
                                     }
 
                                     await OnErrorAsync();
                                 }
-                                catch(Exception errorEx)
+                                catch (Exception errorEx)
                                 {
                                     _logger?.LogError(errorEx, "Handle error exception!");
                                 }
@@ -110,8 +107,6 @@ namespace Yarkool.Redis.Queue
                     // ReSharper disable once FunctionNeverReturns
                 });
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

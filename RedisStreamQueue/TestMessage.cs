@@ -10,6 +10,6 @@ namespace RedisStreamQueue
     [QueueAttribute("TestQueue")]
     public class TestMessage : BaseMessage
     {
-        public string Input { get; set; }
+        public string? Input { get; set; }
     }
 }

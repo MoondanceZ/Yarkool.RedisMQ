@@ -2,7 +2,7 @@
 
 namespace RedisStreamQueue;
 
-public class TestProducer: AbstractProducer<TestMessage>
+public class TestProducer: BaseProducer<TestMessage>
 {
     
 }

@@ -16,7 +16,7 @@ services.AddRedisQueue(cli, config =>
     config.RedisPrefix = "Test:";
 });
 
-services.AddTransient<TestProducer>();
+//services.AddTransient<TestProducer>();
 
 using var buildServiceProvider = services.BuildServiceProvider();
 var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;

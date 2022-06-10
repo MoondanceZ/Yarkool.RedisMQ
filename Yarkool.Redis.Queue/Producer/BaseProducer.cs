@@ -3,23 +3,20 @@ using Newtonsoft.Json;
 
 namespace Yarkool.Redis.Queue
 {
-    public abstract class AbstractProducer<TMessage> where TMessage : BaseMessage
+    public abstract class BaseProducer<TMessage> : IProducer where TMessage : BaseMessage
     {
-        private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
         private readonly string _queueName;
-        private readonly string _groupName;
 
-        public AbstractProducer()
+        public BaseProducer()
         {
-            _queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
+            var queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
             _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
 
             var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
             ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
 
-            _queueName = $"{_queueConfig.RedisPrefix}{queueAttr.QueueName}";
-            _groupName = $"{queueAttr.QueueName}_Group";
+            _queueName = $"{queueConfig.RedisPrefix}{queueAttr.QueueName}";
         }
 
         /// <summary>

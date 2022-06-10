@@ -18,4 +18,12 @@ public class IocContainer
         using var scope = _serviceProvider.CreateScope();
         return scope.ServiceProvider.GetService<TService>();
     }
+
+    public static object? Resolve(Type type)
+    {
+        ArgumentNullException.ThrowIfNull(_serviceProvider);
+
+        using var scope = _serviceProvider.CreateScope();
+        return scope.ServiceProvider.GetService(type);
+    }
 }

@@ -15,15 +15,18 @@ services.AddRedisQueue(cli, config =>
     config.RedisPrefix = "Test:";
 });
 
-services.AddTransient<TestConsumer>();
+//services.AddTransient<TestConsumer>();
 
 using var buildServiceProvider = services.BuildServiceProvider();
 var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
 var testConsumer = serviceProvider.GetService<TestConsumer>()!;
 
+
+//testConsumer.SubcribeAsync().ConfigureAwait(false).GetAwaiter();
+
 while (true)
 {
-    testConsumer.SubcribeAsync().ConfigureAwait(false).GetAwaiter();
+    //testConsumer.SubcribeAsync().ConfigureAwait(false).GetAwaiter();
     //多个消费者消费同一个消费组, 消息会随机分布到消费者手上
     // ThreadPool.QueueUserWorkItem(_ =>
     // {
