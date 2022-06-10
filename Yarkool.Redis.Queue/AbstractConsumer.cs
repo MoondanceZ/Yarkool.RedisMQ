@@ -1,9 +1,10 @@
 ﻿using FreeRedis;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Yarkool.Redis.Queue.Utils;
 
 namespace Yarkool.Redis.Queue
 {
@@ -11,65 +12,98 @@ namespace Yarkool.Redis.Queue
     {
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
+        private readonly ErrorProducer _errorProducer;
+        private readonly ILogger<AbstractConsumer<TMessage>>? _logger;
+
+        private readonly string _queueName;
+        private readonly string _groupName;
+        private readonly string _consumerName;
+        private readonly int _consumerCount;
 
         public AbstractConsumer()
         {
-            var queueConfig = IocContainer.Resolve<QueueConfig>();
-            ArgumentNullException.ThrowIfNull(queueConfig, nameof(QueueConfig));
+            _queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
+            _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
+            _errorProducer = IocContainer.Resolve<ErrorProducer>() ?? throw new ArgumentNullException(nameof(ErrorProducer));
+            _logger = IocContainer.Resolve<ILogger<AbstractConsumer<TMessage>>>();
 
-            var redisClient = IocContainer.Resolve<RedisClient>();
-            ArgumentNullException.ThrowIfNull(redisClient, nameof(RedisClient));
+            var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
+            ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
 
-            _queueConfig = queueConfig;
-            _redisClient = redisClient;
+            _queueName = $"{_queueConfig.RedisPrefix}{queueAttr.QueueName}";
+            _groupName = $"{queueAttr.QueueName}_Group";
+            _consumerName = $"{queueAttr.QueueName}_Consumer";
+            _consumerCount = queueAttr.ConsumerCount;
+
+            //初始化队列信息
+            if (!_redisClient.Exists(_queueName))
+            {
+                _redisClient.XGroupCreate(_queueName, _groupName, MkStream: true);
+            }
+            else
+            {
+                var infoGroups = _redisClient.XInfoGroups(_queueName);
+                if (!infoGroups.Any(x => x.name == _groupName))
+                    _redisClient.XGroupCreate(_queueName, _groupName, MkStream: true);
+            }
+
         }
 
         public Task SubcribeAsync()
         {
-            var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
-            ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
-
-            var queueName = $"{_queueConfig.RedisOptions.Prefix}{queueAttr.QueueName}";
-            var groupName = $"{queueAttr.QueueName}_Group";
-            var consumerName = $"{queueAttr.QueueName}_Consumer";
-            for (var i = 0; i < queueAttr.ConsumerCount; i++)
+            for (var i = 0; i < _consumerCount; i++)
             {
                 var consumerIndex = i + 1;
                 Task.Run(async () =>
                 {
                     while (true)
                     {
-                        //初始化队列信息
-                        if (!_redisClient.Exists(queueName))
-                        {
-                            _redisClient.XGroupCreate(queueName, groupName, MkStream: true);
-                        }
-                        else
-                        {
-                            var infoGroups = _redisClient.XInfoGroups(queueName);
-                            if (!infoGroups.Any(x => x.name == groupName))
-                                _redisClient.XGroupCreate(queueName, groupName, MkStream: true);
-                        }
-
-                        var data = _redisClient.XReadGroup(groupName, $"{consumerName}_{consumerIndex}", 5, queueName, ">");
+                        var messageContent = string.Empty;
+                        var data = _redisClient.XReadGroup(_groupName, $"{_consumerName}_{consumerIndex}", 5, _queueName, ">");
                         if (data != null)
                         {
                             try
                             {
                                 var message = data.fieldValues.MapToClass<TMessage>(encoding: Encoding.UTF8);
+                                messageContent = JsonConvert.SerializeObject(message);
+
+                                //Execute messge
                                 await OnMessageAsync(message);
 
                                 //ACK
-                                _redisClient.XAck(queueName, groupName, data.id);
-                                _redisClient.XDel(queueName, data.id);
+                                _redisClient.XAck(_queueName, _groupName, data.id);
+                                _redisClient.XDel(_queueName, data.id);
                             }
-                            catch (Exception e)
+                            catch (Exception ex)
                             {
-                                if (_queueConfig.ErrorQueueOptions != null)
+                                try
                                 {
-                                }
+                                    if (_queueConfig.UseErrorQueue)
+                                    {
 
-                                await OnErrorAsync();
+                                        var errorMessage = new ErrorMessage
+                                        {
+                                            ConsumerName = _consumerName,
+                                            ExceptionMessage = ex.Message,
+                                            StackTrace = ex.StackTrace,
+                                            GroupName = _groupName,
+                                            MessageContent = messageContent,
+                                            QueueName = _queueName,
+                                        };
+                                        await _errorProducer.PublishAsync(errorMessage);
+
+                                    }
+
+                                    await OnErrorAsync();
+                                }
+                                catch(Exception errorEx)
+                                {
+                                    _logger?.LogError(errorEx, "Handle error exception!");
+                                }
+                            }
+                            finally
+                            {
+                                messageContent = string.Empty;
                             }
                         }
                     }

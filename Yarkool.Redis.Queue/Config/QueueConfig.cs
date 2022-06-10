@@ -13,35 +13,36 @@ namespace Yarkool.Redis.Queue
     public class QueueConfig
     {
         /// <summary>
-        /// ErrorQueueOptions
-        /// </summary>
-        public ErrorQueueOptions? ErrorQueueOptions { get; private set; }
-
-        /// <summary>
         /// MessageStorageTime, seconde
         /// </summary>
         public int MessageStorageTime { get; set; } = (int)TimeSpan.FromDays(7).TotalSeconds;
 
-        /// <summary>
-        /// RedisOption
-        /// </summary>
-        public RedisOptions RedisOptions { get; set; } = default!;
+        ///// <summary>
+        ///// RedisOption
+        ///// </summary>
+        //public RedisOptions RedisOptions { get; set; } = default!;
 
         /// <summary>
-        /// UseConsumeErrorQueue
+        /// 使用失败队列
         /// </summary>
-        /// <param name="options"></param>
-        public void UseConsumeErrorQueue(Action<ErrorQueueOptions>? options = null)
-        {
-            if (options != null)
-            {
-                ErrorQueueOptions = new ErrorQueueOptions();
-                options(ErrorQueueOptions);
-            }
-        }
+        public bool UseErrorQueue { get; set; }
 
-        public void UseRedisClient(Action<RedisClient> client)
-        {
-        }
+        /// <summary>
+        /// Redis缓存前缀
+        /// </summary>
+        public string? RedisPrefix { get; set; }
+
+        ///// <summary>
+        ///// UseConsumeErrorQueue
+        ///// </summary>
+        ///// <param name="options"></param>
+        //public void UseConsumeErrorQueue(Action<ErrorQueueOptions>? options = null)
+        //{
+        //    if (options != null)
+        //    {
+        //        ErrorQueueOptions = new ErrorQueueOptions();
+        //        options(ErrorQueueOptions);
+        //    }
+        //}
     }
 }

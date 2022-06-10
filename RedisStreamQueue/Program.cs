@@ -12,16 +12,8 @@ cli.Notice += (s, e) => Console.WriteLine(e.Log);
 var services = new ServiceCollection();
 services.AddRedisQueue(cli, config =>
 {
-    config.UseConsumeErrorQueue(options =>
-    {
-        options.QueueName = "ConsumeErrorQueue";
-    });
-
-    config.RedisOptions = new RedisOptions
-    {
-        Host = "localhost",
-        Prefix = "Test:"
-    };
+    config.UseErrorQueue = true;
+    config.RedisPrefix = "Test:";
 });
 
 services.AddTransient<TestProducer>();

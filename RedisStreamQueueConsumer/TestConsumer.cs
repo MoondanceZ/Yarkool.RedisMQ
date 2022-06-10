@@ -12,7 +12,7 @@ namespace RedisStreamQueue
     {
         protected override Task OnMessageAsync(TestMessage message)
         {
-            Console.Write(JsonConvert.SerializeObject(message));
+            Console.WriteLine(JsonConvert.SerializeObject(message));
             return Task.CompletedTask;
         }
 

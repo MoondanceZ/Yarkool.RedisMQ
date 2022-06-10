@@ -7,7 +7,7 @@ using Yarkool.Redis.Queue;
 
 namespace RedisStreamQueue
 {
-    [QueueAttribute("Test")]
+    [QueueAttribute("TestQueue")]
     public class TestMessage : BaseMessage
     {
         public string Input { get; set; }

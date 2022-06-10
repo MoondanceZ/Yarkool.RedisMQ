@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FreeRedis;
-using Yarkool.Redis.Queue.Utils;
 
 namespace Yarkool.Redis.Queue
 {
@@ -19,10 +18,9 @@ namespace Yarkool.Redis.Queue
             var queueConfig = new QueueConfig();
             config(queueConfig);
 
-            ArgumentNullException.ThrowIfNull(queueConfig.RedisOptions, nameof(queueConfig.RedisOptions));
-            ArgumentNullException.ThrowIfNull(queueConfig.RedisOptions.Host, nameof(queueConfig.RedisOptions.Host));
-
             services.AddSingleton(queueConfig);
+
+            services.AddTransient<ErrorProducer>();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);

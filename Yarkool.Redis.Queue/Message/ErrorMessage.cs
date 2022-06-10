@@ -6,19 +6,12 @@ using System.Threading.Tasks;
 
 namespace Yarkool.Redis.Queue
 {
-    public class ErrorMessage<TMessage> where TMessage : BaseMessage
+    /// <summary>
+    /// 错误队列
+    /// </summary>
+    [Queue("Error")]
+    public class ErrorMessage : BaseMessage
     {
-        /// <summary>
-        /// 时间戳
-        /// </summary>
-        public long Timestamp
-        {
-            get
-            {
-                return (DateTime.Now.ToUniversalTime().Ticks - new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero).Ticks) / 10000;
-            }
-        }
-
         /// <summary>
         /// 对列名称
         /// </summary>
@@ -35,8 +28,18 @@ namespace Yarkool.Redis.Queue
         public string ConsumerName { get; set; } = default!;
 
         /// <summary>
-        /// 消息
+        /// 错误内容
         /// </summary>
-        public TMessage Message { get; set; } = default!;
+        public string ExceptionMessage { get; set; } = default!;
+
+        /// <summary>
+        /// 堆栈信息
+        /// </summary>
+        public string? StackTrace { get; set; }
+
+        /// <summary>
+        /// 消息内容
+        /// </summary>
+        public string MessageContent { get; set; } = default!;
     }
 }

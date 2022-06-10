@@ -5,22 +5,14 @@ using Microsoft.Extensions.DependencyInjection;
 using RedisStreamQueue;
 using Yarkool.Redis.Queue;
 
- var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
-// cli.Notice += (s, e) => Console.WriteLine(e.Log);
+var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
+//cli.Notice += (s, e) => Console.WriteLine(e.Log);
 
 var services = new ServiceCollection();
 services.AddRedisQueue(cli, config =>
 {
-    config.UseConsumeErrorQueue(options =>
-    {
-        options.QueueName = "ConsumeErrorQueue";
-    });
-
-    config.RedisOptions = new RedisOptions
-    {
-        Host = "localhost",
-        Prefix = "Test:"
-    };
+    config.UseErrorQueue = true;
+    config.RedisPrefix = "Test:";
 });
 
 services.AddTransient<TestConsumer>();
