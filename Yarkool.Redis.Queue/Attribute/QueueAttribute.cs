@@ -23,7 +23,7 @@ namespace Yarkool.Redis.Queue
         /// <summary>
         /// 消费者数量
         /// </summary>
-        public int ConsumerCount { get; set; } = 1;
+        public int SubscriberCount { get; set; } = 1;
 
         /// <summary>
         /// 等待超时时间, 默认: 5分钟

@@ -25,7 +25,7 @@ namespace Yarkool.Redis.Queue
         /// <summary>
         /// 消费者名称
         /// </summary>
-        public string ConsumerName { get; set; } = default!;
+        public string SubscriberName { get; set; } = default!;
 
         /// <summary>
         /// 错误内容

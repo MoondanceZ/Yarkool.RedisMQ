@@ -3,12 +3,12 @@ using Newtonsoft.Json;
 
 namespace Yarkool.Redis.Queue
 {
-    public abstract class BaseProducer<TMessage> : IProducer where TMessage : BaseMessage
+    public abstract class BasePublisher<TMessage> : IPublisher where TMessage : BaseMessage
     {
         private readonly RedisClient _redisClient;
         private readonly string _queueName;
 
-        public BaseProducer()
+        public BasePublisher()
         {
             var queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
             _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));

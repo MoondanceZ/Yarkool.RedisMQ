@@ -27,18 +27,18 @@ namespace Yarkool.Redis.Queue
 
             services.AddSingleton(queueConfig);
 
-            services.AddTransient<ErrorProducer>();
+            services.AddTransient<ErrorPublisher>();
 
             services.AddLogging();
 
-            services.AddQueueConsumer();
+            services.AddQueueSubscriber();
 
-            services.AddQueueProducer();
+            services.AddQueuePublisher();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);
 
-            InitializeConsumer();
+            InitializeSubscriber();
 
             return services;
         }
@@ -60,16 +60,16 @@ namespace Yarkool.Redis.Queue
         }
 
         /// <summary>
-        /// 注入Consumer
+        /// 注入Subscriber
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        private static IServiceCollection AddQueueConsumer(this IServiceCollection services)
+        private static IServiceCollection AddQueueSubscriber(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var consumerTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IConsumer).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseConsumer<>).Name)).ToList();
+            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseSubscriber<>).Name)).ToList();
 
-            foreach (var item in consumerTypes)
+            foreach (var item in subscriberTypes)
             {
                 services.AddTransient(item);
             }
@@ -78,19 +78,22 @@ namespace Yarkool.Redis.Queue
         }
 
         /// <summary>
-        /// 注入Producer
+        /// 注入Publisher
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        private static IServiceCollection AddQueueProducer(this IServiceCollection services)
+        private static IServiceCollection AddQueuePublisher(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var producerTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IProducer).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseProducer<>).Name)).ToList();
+            var publisherTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IPublisher).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BasePublisher<>).Name)).ToList();
 
-            foreach (var item in producerTypes)
+            foreach (var item in publisherTypes)
             {
                 services.AddTransient(item);
             }
+
+
+            services.addho
 
             return services;
         }
@@ -98,16 +101,16 @@ namespace Yarkool.Redis.Queue
         /// <summary>
         /// 初始化消费者
         /// </summary>
-        private static void InitializeConsumer()
+        private static void InitializeSubscriber()
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var consumerTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IConsumer).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseConsumer<>).Name)).ToList();
+            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseSubscriber<>).Name)).ToList();
 
-            foreach (var item in consumerTypes)
+            foreach (var item in subscriberTypes)
             {
-                if (IocContainer.Resolve(item) is IConsumer consumer)
+                if (IocContainer.Resolve(item) is ISubscriber subscriber)
                 {
-                    consumer.Subscribe();
+                    Task.Run(() => subscriber.SubscribeAsync());
                 }
             }
         }

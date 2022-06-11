@@ -8,7 +8,7 @@ using Yarkool.Redis.Queue;
 
 namespace RedisStreamQueue
 {
-    internal class TestConsumer : BaseConsumer<TestMessage>
+    internal class TestSubscriber : BaseSubscriber<TestMessage>
     {
         protected override Task OnMessageAsync(TestMessage message)
         {

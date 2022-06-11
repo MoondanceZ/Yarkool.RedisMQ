@@ -1,10 +1,10 @@
 ﻿namespace Yarkool.Redis.Queue;
 
-public interface IConsumer
+public interface ISubscriber
 {
     /// <summary>
     /// Subscribe
     /// </summary>
     /// <returns></returns>
-    void Subscribe();
+    Task SubscribeAsync();
 }

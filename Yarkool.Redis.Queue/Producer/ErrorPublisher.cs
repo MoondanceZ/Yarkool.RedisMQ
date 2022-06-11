@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Yarkool.Redis.Queue
 {
-    internal class ErrorProducer : BaseProducer<ErrorMessage>
+    internal class ErrorPublisher : BasePublisher<ErrorMessage>
     {
     }
 }
