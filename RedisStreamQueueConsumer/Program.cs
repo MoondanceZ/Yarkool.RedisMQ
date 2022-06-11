@@ -3,13 +3,13 @@
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
 using RedisStreamQueue;
-using Yarkool.Redis.Queue;
+using Yarkool.RedisMQ;
 
 var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
 //cli.Notice += (s, e) => Console.WriteLine(e.Log);
 
 var services = new ServiceCollection();
-services.AddRedisQueue(cli, config =>
+services.AddRedisMQ(cli, config =>
 {
     config.UseErrorQueue = true;
     config.RedisPrefix = "Test:";

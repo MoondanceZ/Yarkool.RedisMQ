@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Yarkool.RedisMQ;
 
-namespace RedisStreamQueue
+namespace Yarkool.Api
 {
     [QueueAttribute("TestQueue", SubscriberCount = 2)]
     internal class TestMessage : BaseMessage

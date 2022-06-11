@@ -1,4 +1,4 @@
-﻿using Yarkool.Redis.Queue;
+﻿using Yarkool.RedisMQ;
 
 namespace RedisStreamQueue;
 

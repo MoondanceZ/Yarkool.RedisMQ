@@ -1,17 +1,17 @@
 ﻿using FreeRedis;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Yarkool.Redis.Queue
+namespace Yarkool.RedisMQ
 {
     public abstract class BaseSubscriber<TMessage> : ISubscriber where TMessage : BaseMessage
     {
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
+        private readonly ISerializer _serializer;
         private readonly ErrorPublisher _errorPublisher;
         private readonly ILogger<BaseSubscriber<TMessage>> _logger;
 
@@ -23,7 +23,8 @@ namespace Yarkool.Redis.Queue
         public BaseSubscriber()
         {
             _queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
-            _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
+            _serializer = _queueConfig.Serializer;
+            _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));            
             _errorPublisher = IocContainer.Resolve<ErrorPublisher>() ?? throw new ArgumentNullException(nameof(ErrorPublisher));
             _logger = IocContainer.Resolve<ILogger<BaseSubscriber<TMessage>>>() ?? throw new ArgumentNullException(nameof(ErrorPublisher));
 
@@ -53,6 +54,9 @@ namespace Yarkool.Redis.Queue
             for (var i = 0; i < _subscriberCount; i++)
             {
                 var subscriberIndex = i + 1;
+
+                _logger.LogInformation($"{_queueName.Replace(_queueConfig.RedisPrefix ?? "", "")} {_subscriberName}_{subscriberIndex} subscribing");
+
                 Task.Run(async () =>
                 {
                     while (true)
@@ -64,7 +68,7 @@ namespace Yarkool.Redis.Queue
                             try
                             {
                                 var message = data.fieldValues.MapToClass<TMessage>(encoding: Encoding.UTF8);
-                                messageContent = JsonConvert.SerializeObject(message);
+                                messageContent = _serializer.Serialize(message);
 
                                 //Execute messge
                                 await OnMessageAsync(message);
@@ -95,7 +99,7 @@ namespace Yarkool.Redis.Queue
                                 }
                                 catch (Exception errorEx)
                                 {
-                                    _logger?.LogError(errorEx, "Handle error exception!");
+                                    _logger.LogError(errorEx, "Handle error exception!");
                                 }
                             }
                             finally

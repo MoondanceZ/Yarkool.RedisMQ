@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Yarkool.RedisMQ;
 
-namespace RedisStreamQueue
+namespace Yarkool.Api
 {
     internal class TestSubscriber : BaseSubscriber<TestMessage>
     {

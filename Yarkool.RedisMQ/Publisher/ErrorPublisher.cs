@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Yarkool.Redis.Queue
+namespace Yarkool.RedisMQ
 {
     internal class ErrorPublisher : BasePublisher<ErrorMessage>
     {

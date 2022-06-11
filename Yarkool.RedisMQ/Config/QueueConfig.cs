@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FreeRedis;
 
-namespace Yarkool.Redis.Queue
+namespace Yarkool.RedisMQ
 {
     /// <summary>
     /// 队列配置
@@ -31,6 +31,11 @@ namespace Yarkool.Redis.Queue
         /// Redis缓存前缀
         /// </summary>
         public string? RedisPrefix { get; set; }
+
+        /// <summary>
+        /// 序列化器
+        /// </summary>
+        public ISerializer Serializer { get; set; } = new DefaultSerializer();
 
         ///// <summary>
         ///// UseConsumeErrorQueue

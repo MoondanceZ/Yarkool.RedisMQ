@@ -5,25 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FreeRedis;
-using Microsoft.Extensions.Logging;
 
-namespace Yarkool.Redis.Queue
+namespace Yarkool.RedisMQ
 {
     public static class QueueServiceCollectionExtensions
     {
         /// <summary>
-        /// AddRedisQueue
+        /// AddRedisMQ
         /// </summary>
         /// <param name="services"></param>
         /// <param name="config"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRedisQueue(this IServiceCollection services, Action<QueueConfig> config)
+        public static IServiceCollection AddRedisMQ(this IServiceCollection services, Action<QueueConfig>? config = null)
         {
             ArgumentNullException.ThrowIfNull(services, nameof(services));
-            ArgumentNullException.ThrowIfNull(config, nameof(config));
 
             var queueConfig = new QueueConfig();
-            config(queueConfig);
+            config?.Invoke(queueConfig);
 
             services.AddSingleton(queueConfig);
 
@@ -44,19 +42,31 @@ namespace Yarkool.Redis.Queue
         }
 
         /// <summary>
-        /// AddRedisQueue
+        /// AddRedisMQ
         /// </summary>
         /// <param name="services"></param>
         /// <param name="redisClient"></param>
         /// <param name="config"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRedisQueue(this IServiceCollection services, RedisClient redisClient, Action<QueueConfig> config)
+        public static IServiceCollection AddRedisMQ(this IServiceCollection services, RedisClient redisClient, Action<QueueConfig>? config = null)
         {
             services.AddSingleton(redisClient);
 
-            services.AddRedisQueue(config);
+            services.AddRedisMQ(config);
 
             return services;
+        }
+
+        /// <summary>
+        /// AddRedisMQ
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="redisClient"></param>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddRedisMQ(this IServiceCollection services, string redisConnStr, Action<QueueConfig>? config = null)
+        {
+            return services.AddRedisMQ(new RedisClient(redisConnStr), config);
         }
 
         /// <summary>
@@ -91,9 +101,6 @@ namespace Yarkool.Redis.Queue
             {
                 services.AddTransient(item);
             }
-
-
-            services.addho
 
             return services;
         }

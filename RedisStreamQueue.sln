@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisStreamQueue", "RedisSt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisStreamQueueConsumer", "RedisStreamQueueConsumer\RedisStreamQueueConsumer.csproj", "{074E1E98-96F2-4318-B820-BEE7D8848CC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQ", "RabbitMQ\RabbitMQ.csproj", "{AC26A46A-11EB-430A-BAFB-56535AE854C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMQ", "RabbitMQ\RabbitMQ.csproj", "{AC26A46A-11EB-430A-BAFB-56535AE854C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarkool.Redis.Queue", "Yarkool.Redis.Queue\Yarkool.Redis.Queue.csproj", "{B2A6067B-31C9-44E0-9778-B53F93A79A18}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarkool.RedisMQ", "Yarkool.RedisMQ\Yarkool.RedisMQ.csproj", "{B2A6067B-31C9-44E0-9778-B53F93A79A18}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarkool.Api", "Yarkool.Api\Yarkool.Api.csproj", "{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2A6067B-31C9-44E0-9778-B53F93A79A18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

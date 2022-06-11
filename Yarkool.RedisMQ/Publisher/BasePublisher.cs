@@ -1,17 +1,19 @@
 ﻿using FreeRedis;
-using Newtonsoft.Json;
 
-namespace Yarkool.Redis.Queue
+namespace Yarkool.RedisMQ
 {
     public abstract class BasePublisher<TMessage> : IPublisher where TMessage : BaseMessage
     {
         private readonly RedisClient _redisClient;
         private readonly string _queueName;
+        private readonly ISerializer _serializer;
 
         public BasePublisher()
         {
             var queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
             _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
+
+            _serializer = queueConfig.Serializer;
 
             var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
             ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
@@ -26,7 +28,7 @@ namespace Yarkool.Redis.Queue
         /// <returns></returns>
         public virtual Task<bool> PublishAsync(TMessage message)
         {
-            var data = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(message));
+            var data = _serializer.Deserialize<Dictionary<string, string>>(_serializer.Serialize(message));
 
             _redisClient.XAdd(_queueName, data);
 

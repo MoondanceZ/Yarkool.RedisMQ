@@ -1,4 +1,4 @@
-﻿namespace Yarkool.Redis.Queue;
+﻿namespace Yarkool.RedisMQ;
 
 public interface ISubscriber
 {

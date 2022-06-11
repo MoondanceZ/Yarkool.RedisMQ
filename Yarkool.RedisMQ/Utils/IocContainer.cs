@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Yarkool.Redis.Queue;
+namespace Yarkool.RedisMQ;
 
 public class IocContainer
 {
