@@ -23,7 +23,7 @@ namespace Yarkool.Api
             throw new NotImplementedException();
         }
 
-        public TestSubscriber(IServiceProvider serviceProvider, ILogger<TestSubscriber> logger) : base(serviceProvider)
+        public TestSubscriber(ILogger<TestSubscriber> logger)
         {
             _logger = logger;
         }

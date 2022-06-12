@@ -11,28 +11,25 @@ namespace Yarkool.RedisMQ
 {
     public abstract class BaseSubscriber<TMessage> : BackgroundService, ISubscriber where TMessage : BaseMessage
     {
-        public IServiceProvider ServiceProvider { get; }
-        
+
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
         private readonly ISerializer _serializer;
         private readonly ErrorPublisher _errorPublisher;
-        private readonly ILogger _logger;
+        private readonly ILogger<BaseSubscriber<TMessage>> _logger;
 
         private readonly string _queueName;
         private readonly string _groupName;
         private readonly string _subscriberName;
         private readonly int _subscriberCount;
-        
-        public BaseSubscriber(IServiceProvider serviceProvider)
+
+        public BaseSubscriber()
         {
-            ServiceProvider = serviceProvider;
-            
-            _queueConfig = serviceProvider.GetRequiredService<QueueConfig>();
+            _queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
             _serializer = _queueConfig.Serializer;
-            _redisClient = serviceProvider.GetRequiredService<RedisClient>();
-            _errorPublisher = serviceProvider.GetRequiredService<ErrorPublisher>();
-            _logger = serviceProvider.GetRequiredService<ILogger<BaseSubscriber<TMessage>>>();
+            _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
+            _errorPublisher = IocContainer.Resolve<ErrorPublisher>() ?? throw new ArgumentNullException(nameof(ErrorPublisher));
+            _logger = IocContainer.Resolve<ILogger<BaseSubscriber<TMessage>>>() ?? throw new ArgumentNullException(nameof(ErrorPublisher));
 
             var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
             ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
@@ -69,7 +66,7 @@ namespace Yarkool.RedisMQ
             {
                 var subscriberIndex = i + 1;
 
-                var actualQueueName = string.IsNullOrEmpty(_queueConfig.RedisPrefix) ? _queueName : _queueName.Replace(_queueConfig.RedisPrefix , "");
+                var actualQueueName = string.IsNullOrEmpty(_queueConfig.RedisPrefix) ? _queueName : _queueName.Replace(_queueConfig.RedisPrefix, "");
                 _logger.LogInformation($"{actualQueueName} {_subscriberName}_{subscriberIndex} subscribing");
 
                 Task.Run(async () =>
@@ -85,10 +82,10 @@ namespace Yarkool.RedisMQ
                                 var message = data.fieldValues.MapToClass<TMessage>(encoding: Encoding.UTF8);
                                 messageContent = _serializer.Serialize(message);
 
-                                //Execute message
+                                    //Execute message
                                 await OnMessageAsync(message);
 
-                                //ACK
+                                    //ACK
                                 _redisClient.XAck(_queueName, _groupName, data.id);
                                 _redisClient.XDel(_queueName, data.id);
                             }
@@ -123,7 +120,7 @@ namespace Yarkool.RedisMQ
                             }
                         }
                     }
-                    // ReSharper disable once FunctionNeverReturns
+                        // ReSharper disable once FunctionNeverReturns
                 }, cancellationToken);
             }
 
