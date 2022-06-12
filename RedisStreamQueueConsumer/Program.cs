@@ -16,6 +16,7 @@ using Yarkool.RedisMQ;
 //    config.RedisPrefix = "Test:";
 //});
 
+Console.WriteLine("Subscriber init");
 
 var build = new HostBuilder()
     .ConfigureServices(services =>

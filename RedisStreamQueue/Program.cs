@@ -8,70 +8,79 @@ using RedisStreamQueue;
 using System.Text;
 using Yarkool.RedisMQ;
 
-
-//var build = new HostBuilder()
-//    .ConfigureServices(services =>
-//    {
-//        services.AddRedisMQ("127.0.0.1:6379,password=,defaultDatabase=3");
-//    });
+Console.WriteLine("Publisher init, input message");
+var build = new HostBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddRedisMQ("127.0.0.1:6379,password=,defaultDatabase=3", config =>
+        {
+            config.UseErrorQueue = true;
+            config.RedisPrefix = "Test:";
+            config.AutoInitPublisher = true;
+        });
+    });
 
 //build.RunConsoleAsync();
 
-var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
-cli.Notice += (s, e) => Console.WriteLine(e.Log);
+var host = build.UseConsoleLifetime().Build();
+var services = host.Services;
+host.RunAsync(default(CancellationToken));
 
-var services = new ServiceCollection();
-services.AddRedisMQ(cli, config =>
-{
-    config.UseErrorQueue = true;
-    config.RedisPrefix = "Test:";
-    config.AutoInitPublisher = true;
-});
+//var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
+//cli.Notice += (s, e) => Console.WriteLine(e.Log);
 
-//services.AddTransient<TestPublisher>();
+//var services = new ServiceCollection();
+//services.AddRedisMQ(cli, config =>
+//{
+//    config.UseErrorQueue = true;
+//    config.RedisPrefix = "Test:";
+//    config.AutoInitPublisher = true;
+//});
 
-using var buildServiceProvider = services.BuildServiceProvider();
-var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
-var testPublisher = serviceProvider.GetService<TestPublisher>()!;
+////services.AddTransient<TestPublisher>();
+
+//using var buildServiceProvider = services.BuildServiceProvider();
+//var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
+//var testPublisher = serviceProvider.GetService<TestPublisher>()!;
 
 
-if (!cli.Exists("x-stream"))
-{
-    cli.XGroupCreate("x-stream", "group1", MkStream: true);
-    cli.XGroupCreate("x-stream", "group2", MkStream: true);
-}
-else
-{
-    //多个分组表示消息会分发到多个分组, 消息也会被消费多次
-    var infoGroups = cli.XInfoGroups("x-stream");
-    if (!infoGroups.Any(x => x.name == "group1"))
-        cli.XGroupCreate("x-stream", "group1", MkStream: true);
+//if (!cli.Exists("x-stream"))
+//{
+//    cli.XGroupCreate("x-stream", "group1", MkStream: true);
+//    cli.XGroupCreate("x-stream", "group2", MkStream: true);
+//}
+//else
+//{
+//    //多个分组表示消息会分发到多个分组, 消息也会被消费多次
+//    var infoGroups = cli.XInfoGroups("x-stream");
+//    if (!infoGroups.Any(x => x.name == "group1"))
+//        cli.XGroupCreate("x-stream", "group1", MkStream: true);
 
-    if (!infoGroups.Any(x => x.name == "group2"))
-        cli.XGroupCreate("x-stream", "group2", MkStream: true);
-}
+//    if (!infoGroups.Any(x => x.name == "group2"))
+//        cli.XGroupCreate("x-stream", "group2", MkStream: true);
+//}
 
-if (!cli.Exists("x-stream-claim"))
-{
-    cli.XGroupCreate("x-stream-claim", "group1", MkStream: true);
-}
-else
-{
-    //多个分组表示消息会分发到多个分组, 消息也会被消费多次
-    var infoGroups = cli.XInfoGroups("x-stream-claim");
-    if (!infoGroups.Any(x => x.name == "group1"))
-        cli.XGroupCreate("x-stream-claim", "group1", MkStream: true);
-}
+//if (!cli.Exists("x-stream-claim"))
+//{
+//    cli.XGroupCreate("x-stream-claim", "group1", MkStream: true);
+//}
+//else
+//{
+//    //多个分组表示消息会分发到多个分组, 消息也会被消费多次
+//    var infoGroups = cli.XInfoGroups("x-stream-claim");
+//    if (!infoGroups.Any(x => x.name == "group1"))
+//        cli.XGroupCreate("x-stream-claim", "group1", MkStream: true);
+//}
 
-var pendingResult = cli.XPending("Test:TestQueue", "TestQueue_Group", "-", "+", 10);
+//var pendingResult = cli.XPending("Test:TestQueue", "TestQueue_Group", "-", "+", 10);
 
-var penddingItem = cli.XReadGroup("TestQueue_Group", "TestQueue_Subscriber_2", 10, 0, false, "Test:TestQueue", "0-0");
+//var penddingItem = cli.XReadGroup("TestQueue_Group", "TestQueue_Subscriber_2", 10, 0, false, "Test:TestQueue", "0-0");
 
-var item = penddingItem.FirstOrDefault()?.entries.FirstOrDefault()?.fieldValues;
+//var item = penddingItem.FirstOrDefault()?.entries.FirstOrDefault()?.fieldValues;
 
-var xInfo = cli.XInfoGroups("Test:TestQueue");
+//var xInfo = cli.XInfoGroups("Test:TestQueue");
 
-var xConsumers = cli.XInfoConsumers("Test:TestQueue", "TestQueue_Group");
+//var xConsumers = cli.XInfoConsumers("Test:TestQueue", "TestQueue_Group");
 
 //var p = cli.XPending("x-stream", "group1", "-", "+", 100000, "subscriber-1");
 
@@ -92,6 +101,8 @@ while (true)
         //     Input = str,
         // }));
         // cli.XAdd("x-stream", dic);
+
+        var testPublisher = services.GetRequiredService<TestPublisher>();
 
         testPublisher.PublishAsync(new TestMessage()
         {
