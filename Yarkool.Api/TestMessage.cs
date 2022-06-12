@@ -8,7 +8,7 @@ using Yarkool.RedisMQ;
 namespace Yarkool.Api
 {
     [QueueAttribute("TestQueue", SubscriberCount = 2)]
-    internal class TestMessage : BaseMessage
+    public class TestMessage : BaseMessage
     {
         public string? Input { get; set; }
     }

@@ -12,10 +12,12 @@ namespace Yarkool.Api.Controllers
     };
 
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly TestPublisher _testPublisher;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, TestPublisher testPublisher)
         {
             _logger = logger;
+            _testPublisher = testPublisher;
         }
 
         [HttpGet]
@@ -28,6 +30,17 @@ namespace Yarkool.Api.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        [HttpGet("GenMessage")]
+        public string GenMessage()
+        {
+            var input = Guid.NewGuid().ToString("N");
+            _testPublisher.PublishAsync(new TestMessage
+            {
+                Input = input
+            });
+            return input;
         }
     }
 }

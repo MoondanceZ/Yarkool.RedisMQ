@@ -7,10 +7,13 @@ using Yarkool.RedisMQ;
 
 namespace Yarkool.Api
 {
-    internal class TestSubscriber : BaseSubscriber<TestMessage>
+    public class TestSubscriber : BaseSubscriber<TestMessage>
     {
+        private readonly ILogger<TestSubscriber> _logger;
+
         protected override Task OnMessageAsync(TestMessage message)
         {
+            _logger.LogInformation(message.Input);
             Console.WriteLine(message.Input);
             return Task.CompletedTask;
         }
@@ -20,8 +23,9 @@ namespace Yarkool.Api
             throw new NotImplementedException();
         }
 
-        public TestSubscriber(IServiceProvider serviceProvider) : base(serviceProvider)
+        public TestSubscriber(IServiceProvider serviceProvider, ILogger<TestSubscriber> logger) : base(serviceProvider)
         {
+            _logger = logger;
         }
     }
 }

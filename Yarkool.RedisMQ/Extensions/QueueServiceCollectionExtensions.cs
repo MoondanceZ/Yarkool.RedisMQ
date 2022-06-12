@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FreeRedis;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 
 namespace Yarkool.RedisMQ
 {
@@ -28,14 +29,14 @@ namespace Yarkool.RedisMQ
 
             services.AddTransient<ErrorPublisher>();
 
-            if (!services.Any(x => x.ServiceType ==  typeof(ILoggerFactory)))
+            if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();
 
             if (queueConfig.AutoInitSubscriber)
-                services.AddQueueSubscriber();
+                services.AddRedisMQSubscriber();
 
             if (queueConfig.AutoInitPublisher)
-                services.AddQueuePublisher();
+                services.AddRedisMQPublisher();
 
             if (queueConfig.AutoRePublishTimeOutMessage)
                 services.AddHostedService<HandlependingTimeOutService>();
@@ -57,7 +58,8 @@ namespace Yarkool.RedisMQ
         /// <returns></returns>
         public static IServiceCollection AddRedisMQ(this IServiceCollection services, RedisClient redisClient, Action<QueueConfig>? config = null)
         {
-            services.AddSingleton(redisClient);
+            if (!services.Any(x => x.ServiceType == typeof(RedisClient)))
+                services.AddSingleton(redisClient);
 
             services.AddRedisMQ(config);
 
@@ -81,7 +83,7 @@ namespace Yarkool.RedisMQ
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        private static IServiceCollection AddQueueSubscriber(this IServiceCollection services)
+        private static IServiceCollection AddRedisMQSubscriber(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseSubscriber<>).Name)).ToList();
@@ -98,11 +100,23 @@ namespace Yarkool.RedisMQ
         }
 
         /// <summary>
+        /// 注入Subscriber
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddRedisMQSubscriber<TSubscriber>(this IServiceCollection services) where TSubscriber : class, ISubscriber, IHostedService
+        {
+            services.AddHostedService<TSubscriber>();
+
+            return services;
+        }
+
+        /// <summary>
         /// 注入Publisher
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        private static IServiceCollection AddQueuePublisher(this IServiceCollection services)
+        private static IServiceCollection AddRedisMQPublisher(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var publisherTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IPublisher).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BasePublisher<>).Name)).ToList();
@@ -117,6 +131,19 @@ namespace Yarkool.RedisMQ
 
             return services;
         }
+
+        /// <summary>
+        /// 注入Publisher
+        /// </summary>
+        /// <param name="services"></param>
+        /// <returns></returns>
+        private static IServiceCollection AddRedisMQPublisher<TPublisher>(this IServiceCollection services) where TPublisher : class, ISubscriber
+        {
+            services.AddSingleton<TPublisher>();
+
+            return services;
+        }
+
 
         /// <summary>
         /// 初始化消费者
@@ -138,9 +165,9 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddHostedService(this IServiceCollection services, Type type)
         {
             var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethods()
-                .Where(x=> x.Name == nameof(ServiceCollectionHostedServiceExtensions.AddHostedService) && x.GetParameters().Length == 1).FirstOrDefault()?
-                .MakeGenericMethod(new Type[] {type});
-            method?.Invoke(null, new object[] {services});
+                .Where(x => x.Name == nameof(ServiceCollectionHostedServiceExtensions.AddHostedService) && x.GetParameters().Length == 1).FirstOrDefault()?
+                .MakeGenericMethod(new Type[] { type });
+            method?.Invoke(null, new object[] { services });
 
             return services;
         }

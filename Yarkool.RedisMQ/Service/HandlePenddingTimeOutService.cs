@@ -47,6 +47,18 @@ namespace Yarkool.RedisMQ
                             var subscriberName = $"{queueAttr.QueueName}_Subscriber";
                             var subscriberCount = queueAttr.SubscriberCount;
 
+                            //初始化队列信息
+                            if (!redisClient.Exists(queueName))
+                            {
+                                redisClient.XGroupCreate(queueName, groupName, MkStream: true);
+                            }
+                            else
+                            {
+                                var infoGroups = redisClient.XInfoGroups(queueName);
+                                if (!infoGroups.Any(x => x.name == groupName))
+                                    redisClient.XGroupCreate(queueName, groupName, MkStream: true);
+                            }
+
                             for (int i = 0; i < subscriberCount; i++)
                             {
                                 var subscriberIndex = i + 1;
