@@ -17,10 +17,20 @@ namespace Yarkool.RedisMQ
         /// </summary>
         public int MessageStorageTime { get; set; } = (int)TimeSpan.FromDays(7).TotalSeconds;
 
-        ///// <summary>
-        ///// RedisOption
-        ///// </summary>
-        //public RedisOptions RedisOptions { get; set; } = default!;
+        /// <summary>
+        /// 自动初始化订阅者
+        /// </summary>
+        public bool AutoInitSubscriber { get; set; }
+
+        /// <summary>
+        /// 自动初始化发布者
+        /// </summary>
+        public bool AutoInitPublisher { get; set; }
+
+        /// <summary>
+        /// 自动重新发布超时消息
+        /// </summary>
+        public bool AutoRePublishTimeOutMessage { get; set; }
 
         /// <summary>
         /// 使用失败队列

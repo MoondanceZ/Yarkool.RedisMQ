@@ -17,6 +17,14 @@ namespace Yarkool.RedisMQ
             });
         }
 
+        //public object? Deserialize(string data, Type type)
+        //{
+        //    return JsonSerializer.Deserialize(data, type, new JsonSerializerOptions()
+        //    {
+        //        NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
+        //    });
+        //}
+
         public string Serialize<T>(T data)
         {
             return JsonSerializer.Serialize(data, new JsonSerializerOptions()

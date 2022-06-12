@@ -2,9 +2,20 @@
 
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using RedisStreamQueue;
+using System.Text;
 using Yarkool.RedisMQ;
+
+
+//var build = new HostBuilder()
+//    .ConfigureServices(services =>
+//    {
+//        services.AddRedisMQ("127.0.0.1:6379,password=,defaultDatabase=3");
+//    });
+
+//build.RunConsoleAsync();
 
 var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
 cli.Notice += (s, e) => Console.WriteLine(e.Log);
@@ -14,6 +25,7 @@ services.AddRedisMQ(cli, config =>
 {
     config.UseErrorQueue = true;
     config.RedisPrefix = "Test:";
+    config.AutoInitPublisher = true;
 });
 
 //services.AddTransient<TestPublisher>();
@@ -51,7 +63,15 @@ else
         cli.XGroupCreate("x-stream-claim", "group1", MkStream: true);
 }
 
-var pendingResult = cli.XPending("x-stream", "group1");
+var pendingResult = cli.XPending("Test:TestQueue", "TestQueue_Group", "-", "+", 10);
+
+var penddingItem = cli.XReadGroup("TestQueue_Group", "TestQueue_Subscriber_2", 10, 0, false, "Test:TestQueue", "0-0");
+
+var item = penddingItem.FirstOrDefault()?.entries.FirstOrDefault()?.fieldValues;
+
+var xInfo = cli.XInfoGroups("Test:TestQueue");
+
+var xConsumers = cli.XInfoConsumers("Test:TestQueue", "TestQueue_Group");
 
 //var p = cli.XPending("x-stream", "group1", "-", "+", 100000, "subscriber-1");
 

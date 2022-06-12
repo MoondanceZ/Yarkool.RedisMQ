@@ -10,6 +10,10 @@ namespace RedisStreamQueue
 {
     internal class TestSubscriber : BaseSubscriber<TestMessage>
     {
+        public TestSubscriber(IServiceProvider serviceProvider) : base(serviceProvider)
+        {
+        }
+        
         protected override Task OnMessageAsync(TestMessage message)
         {
             Console.WriteLine(JsonConvert.SerializeObject(message));

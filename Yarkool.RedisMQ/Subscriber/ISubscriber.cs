@@ -6,5 +6,5 @@ public interface ISubscriber
     /// Subscribe
     /// </summary>
     /// <returns></returns>
-    Task SubscribeAsync();
+    Task SubscribeAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

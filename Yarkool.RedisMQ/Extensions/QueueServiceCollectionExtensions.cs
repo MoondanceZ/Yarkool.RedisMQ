@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FreeRedis;
+using Microsoft.Extensions.Logging;
 
 namespace Yarkool.RedisMQ
 {
@@ -27,16 +28,22 @@ namespace Yarkool.RedisMQ
 
             services.AddTransient<ErrorPublisher>();
 
-            services.AddLogging();
+            if (!services.Any(x => x.ServiceType ==  typeof(ILoggerFactory)))
+                services.AddLogging();
 
-            services.AddQueueSubscriber();
+            if (queueConfig.AutoInitSubscriber)
+                services.AddQueueSubscriber();
 
-            services.AddQueuePublisher();
+            if (queueConfig.AutoInitPublisher)
+                services.AddQueuePublisher();
+
+            if (queueConfig.AutoRePublishTimeOutMessage)
+                services.AddHostedService<HandlependingTimeOutService>();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);
 
-            InitializeSubscriber();
+            // InitializeSubscriber();
 
             return services;
         }
@@ -61,7 +68,7 @@ namespace Yarkool.RedisMQ
         /// AddRedisMQ
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="redisClient"></param>
+        /// <param name="redisConnStr"></param>
         /// <param name="config"></param>
         /// <returns></returns>
         public static IServiceCollection AddRedisMQ(this IServiceCollection services, string redisConnStr, Action<QueueConfig>? config = null)
@@ -81,8 +88,11 @@ namespace Yarkool.RedisMQ
 
             foreach (var item in subscriberTypes)
             {
-                services.AddTransient(item);
+                services.AddHostedService(item);
             }
+
+            //订阅者这里需要注入错误队列发布者
+            services.AddSingleton<ErrorPublisher>();
 
             return services;
         }
@@ -99,7 +109,10 @@ namespace Yarkool.RedisMQ
 
             foreach (var item in publisherTypes)
             {
-                services.AddTransient(item);
+                if (item == typeof(ErrorPublisher))
+                    continue;
+
+                services.AddSingleton(item);
             }
 
             return services;
@@ -120,6 +133,16 @@ namespace Yarkool.RedisMQ
                     Task.Run(() => subscriber.SubscribeAsync());
                 }
             }
+        }
+
+        private static IServiceCollection AddHostedService(this IServiceCollection services, Type type)
+        {
+            var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethods()
+                .Where(x=> x.Name == nameof(ServiceCollectionHostedServiceExtensions.AddHostedService) && x.GetParameters().Length == 1).FirstOrDefault()?
+                .MakeGenericMethod(new Type[] {type});
+            method?.Invoke(null, new object[] {services});
+
+            return services;
         }
     }
 }

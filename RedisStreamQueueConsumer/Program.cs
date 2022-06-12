@@ -2,24 +2,43 @@
 
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RedisStreamQueue;
 using Yarkool.RedisMQ;
 
-var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
-//cli.Notice += (s, e) => Console.WriteLine(e.Log);
+//var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
+////cli.Notice += (s, e) => Console.WriteLine(e.Log);
 
-var services = new ServiceCollection();
-services.AddRedisMQ(cli, config =>
-{
-    config.UseErrorQueue = true;
-    config.RedisPrefix = "Test:";
-});
+//var services = new ServiceCollection();
+//services.AddRedisMQ(cli, config =>
+//{
+//    config.UseErrorQueue = true;
+//    config.RedisPrefix = "Test:";
+//});
+
+
+var build = new HostBuilder()
+    .ConfigureServices(services =>
+    {
+        var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
+        //cli.Notice += (s, e) => Console.WriteLine(e.Log);
+
+        services.AddRedisMQ(cli, config =>
+        {
+            config.UseErrorQueue = true;
+            config.RedisPrefix = "Test:";
+            config.AutoInitSubscriber = true;
+            config.AutoRePublishTimeOutMessage = true;
+        });
+    });
+
+build.RunConsoleAsync();
 
 //services.AddTransient<TestSubscriber>();
 
-using var buildServiceProvider = services.BuildServiceProvider();
-var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
-var testSubscriber = serviceProvider.GetService<TestSubscriber>()!;
+//using var buildServiceProvider = services.BuildServiceProvider();
+//var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
+//var testSubscriber = serviceProvider.GetService<TestSubscriber>()!;
 
 
 //testSubscriber.SubcribeAsync().ConfigureAwait(false).GetAwaiter();

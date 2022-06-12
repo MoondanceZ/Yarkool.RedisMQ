@@ -28,6 +28,6 @@ namespace Yarkool.RedisMQ
         /// <summary>
         /// 等待超时时间, 默认: 5分钟
         /// </summary>
-        public int PenddingTimeOut { get; set; } = 5 * 60;
+        public int PendingTimeOut { get; set; } = 5 * 60;
     }
 }
