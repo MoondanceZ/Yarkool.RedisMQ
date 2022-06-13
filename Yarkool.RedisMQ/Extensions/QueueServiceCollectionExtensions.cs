@@ -27,7 +27,7 @@ namespace Yarkool.RedisMQ
 
             services.AddSingleton(queueConfig);
 
-            services.AddTransient<ErrorPublisher>();
+            services.AddSingleton<ErrorPublisher>();
 
             if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();
