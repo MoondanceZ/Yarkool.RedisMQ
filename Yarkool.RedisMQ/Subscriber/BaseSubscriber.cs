@@ -11,7 +11,6 @@ namespace Yarkool.RedisMQ
 {
     public abstract class BaseSubscriber<TMessage> : BackgroundService, ISubscriber where TMessage : BaseMessage
     {
-
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
         private readonly ISerializer _serializer;
@@ -82,10 +81,10 @@ namespace Yarkool.RedisMQ
                                 var message = data.fieldValues.MapToClass<TMessage>(encoding: Encoding.UTF8);
                                 messageContent = _serializer.Serialize(message);
 
-                                    //Execute message
+                                //Execute message
                                 await OnMessageAsync(message);
 
-                                    //ACK
+                                //ACK
                                 _redisClient.XAck(_queueName, _groupName, data.id);
                                 _redisClient.XDel(_queueName, data.id);
                             }
@@ -120,7 +119,6 @@ namespace Yarkool.RedisMQ
                             }
                         }
                     }
-                        // ReSharper disable once FunctionNeverReturns
                 }, cancellationToken);
             }
 
