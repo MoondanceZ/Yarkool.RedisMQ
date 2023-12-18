@@ -1,6 +1,6 @@
 ﻿namespace Yarkool.RedisMQ
 {
-    public abstract class BaseSubscriber : ISubscriber
+    public abstract class BaseConsumer<TMessage> : IConsumer
     {
         /// <summary>
         /// On Message
@@ -8,7 +8,7 @@
         /// <param name="message"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public abstract Task OnMessageAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default);
+        public abstract Task OnMessageAsync(TMessage message, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// On Error
@@ -16,7 +16,7 @@
         /// <param name="message"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual Task OnErrorAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default)
+        public virtual Task OnErrorAsync(TMessage message, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

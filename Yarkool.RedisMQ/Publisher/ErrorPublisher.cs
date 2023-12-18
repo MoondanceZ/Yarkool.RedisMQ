@@ -1,7 +1,7 @@
 ﻿namespace Yarkool.RedisMQ
 {
-    [QueueSubscriber("Error")]
-    public class ErrorPublisher : BasePublisher
+    [QueuePublisher("Error")]
+    public class ErrorPublisher : BasePublisher<ErrorMessage>
     {
     }
 }

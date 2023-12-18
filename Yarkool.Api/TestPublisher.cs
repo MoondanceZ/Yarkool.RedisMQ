@@ -2,7 +2,8 @@
 
 namespace Yarkool.Api
 {
-    public class TestPublisher : BasePublisher
+    [QueuePublisher("Test")]
+    public class TestPublisher : BasePublisher<TestMessage>
     {
     }
 }

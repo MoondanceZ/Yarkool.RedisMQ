@@ -1,6 +1,6 @@
 ﻿namespace Yarkool.RedisMQ
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class)]
     public class QueuePublisherAttribute(string queueName) : Attribute
     {
         /// <summary>

@@ -16,7 +16,7 @@ namespace Yarkool.RedisMQ
         private readonly ISerializer _serializer;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<HandlePendingTimeOutService> _logger;
-        private readonly Dictionary<Type, QueueSubscriberAttribute> _queueSubscriberDic = new Dictionary<Type, QueueSubscriberAttribute>();
+        private readonly Dictionary<Type, QueueConsumerAttribute> _queueSubscriberDic = new();
 
         public HandlePendingTimeOutService(QueueConfig queueConfig, RedisClient redisClient, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
         {
@@ -26,12 +26,12 @@ namespace Yarkool.RedisMQ
             _serviceProvider = serviceProvider;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            var subscriberServices = _serviceProvider.GetServices<ISubscriber>();
+            var subscriberServices = _serviceProvider.GetServices(typeof(IConsumer));
             foreach (var subscriber in subscriberServices)
             {
                 var subscriberType = subscriber!.GetType();
-                var queueSubscriberAttribute = subscriberType.GetCustomAttributes(typeof(QueueSubscriberAttribute), false).FirstOrDefault() as QueueSubscriberAttribute;
-                ArgumentNullException.ThrowIfNull(queueSubscriberAttribute, nameof(QueueSubscriberAttribute));
+                var queueSubscriberAttribute = subscriberType.GetCustomAttributes(typeof(QueueConsumerAttribute), false).FirstOrDefault() as QueueConsumerAttribute;
+                ArgumentNullException.ThrowIfNull(queueSubscriberAttribute, nameof(QueueConsumerAttribute));
 
                 _queueSubscriberDic.Add(subscriberType, queueSubscriberAttribute);
 

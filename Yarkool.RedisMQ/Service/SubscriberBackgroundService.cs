@@ -8,35 +8,22 @@ namespace Yarkool.RedisMQ;
 
 public class SubscriberBackgroundService : BackgroundService
 {
-    private readonly QueueConfig _queueConfig;
+    private readonly ConsumerServiceSelector _consumerServiceSelector;
     private readonly RedisClient _redisClient;
-    private readonly ISerializer _serializer;
-    private readonly ErrorPublisher _errorPublisher;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<SubscriberBackgroundService> _logger;
-    private readonly Dictionary<Type, QueueSubscriberAttribute> _queueSubscriberDic = new Dictionary<Type, QueueSubscriberAttribute>();
 
-    public SubscriberBackgroundService(QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher,IServiceProvider serviceProvider, ILogger<SubscriberBackgroundService> logger)
+    public SubscriberBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher, IServiceProvider serviceProvider, ILogger<SubscriberBackgroundService> logger)
     {
-        _queueConfig = queueConfig ?? throw new ArgumentNullException(nameof(queueConfig));
-        _serializer = _queueConfig.Serializer;
-        _redisClient = redisClient ?? throw new ArgumentNullException(nameof(redisClient));
-        _errorPublisher = errorPublisher ?? throw new ArgumentNullException(nameof(errorPublisher));
+        _consumerServiceSelector = consumerServiceSelector;
+        _redisClient = redisClient;
         _serviceProvider = serviceProvider;
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger;
 
-        var subscriberServices = _serviceProvider.GetServices<ISubscriber>();
-        foreach (var subscriber in subscriberServices)
+        foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
         {
-            var subscriberType = subscriber!.GetType();
-            var queueSubscriberAttribute = subscriberType.GetCustomAttributes(typeof(QueueSubscriberAttribute), false).FirstOrDefault() as QueueSubscriberAttribute;
-            ArgumentNullException.ThrowIfNull(queueSubscriberAttribute, nameof(QueueSubscriberAttribute));
-
-            _queueSubscriberDic.Add(subscriberType, queueSubscriberAttribute);
-
-            var queueName = $"{_queueConfig.RedisPrefix}{queueSubscriberAttribute.QueueName}";
-            var groupName = $"{queueSubscriberAttribute.QueueName}_Group";
-            var subscriberName = $"{queueSubscriberAttribute.QueueName}_Subscriber";
+            var queueName = consumerExecutorDescriptor.QueueName;
+            var groupName = consumerExecutorDescriptor.GroupName;
 
             //初始化队列信息
             if (!_redisClient.Exists(queueName))
@@ -54,38 +41,34 @@ public class SubscriberBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        for (var i = 0; i < _queueSubscriberDic.Count; i++)
+        for (var i = 0; i < _consumerServiceSelector.GetConsumerExecutorDescriptors().Count(); i++)
         {
             var subscriberIndex = i + 1;
+            var consumerExecutorDescriptor = _consumerServiceSelector.GetConsumerExecutorDescriptors().ElementAt(i);
 
-            var queueSubscriberItem = _queueSubscriberDic.ElementAt(i);
-            var queueSubscriberAttribute = queueSubscriberItem.Value;
+            var queueName = consumerExecutorDescriptor.QueueName;
+            var groupName = consumerExecutorDescriptor.GroupName;
+            var subscriberName = $"{consumerExecutorDescriptor.QueueName}_Subscriber";
 
-            var queueName = $"{_queueConfig.RedisPrefix}{queueSubscriberAttribute.QueueName}";
-            var groupName = $"{queueSubscriberAttribute.QueueName}_Group";
-            var subscriberName = $"{queueSubscriberAttribute.QueueName}_Subscriber";
-
-            var actualQueueName = string.IsNullOrEmpty(_queueConfig.RedisPrefix) ? queueName : queueName.Replace(_queueConfig.RedisPrefix, "");
-            _logger.LogInformation($"{actualQueueName} {subscriberName}_{subscriberIndex} subscribing");
+            _logger?.LogInformation($"{consumerExecutorDescriptor.QueueConsumerAttribute.QueueName} {subscriberName}_{subscriberIndex} subscribing");
 
             await Task.Run(async () =>
             {
-                var subscriberType = queueSubscriberItem.Key;
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     var message = default(BaseMessage);
                     var data = await _redisClient.XReadGroupAsync(groupName, $"{subscriberName}_{subscriberIndex}", 100, queueName, ">");
                     if (data != null)
                     {
-                        var subscriber = _serviceProvider.CreateScope().ServiceProvider.GetService(queueSubscriberItem.Key) as ISubscriber;
-                        ArgumentNullException.ThrowIfNull(subscriber, queueSubscriberItem.Key.Name);
-
+                        //https://github.com/dotnetcore/CAP/blob/master/src/DotNetCore.CAP/Internal/IConsumerServiceSelector.Default.cs#L21
+                        var subscriber = _serviceProvider.CreateScope().ServiceProvider.GetServices(typeof(IConsumer)).First(x => x?.GetType() == subscriberType);
+                        ArgumentNullException.ThrowIfNull(subscriber, nameof(subscriber));
                         try
                         {
                             message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
 
                             //Execute message
-                            await subscriber.OnMessageAsync(message.MessageContent, stoppingToken);
+                            await (Task) subscriberType.GetMethod("OnMessageAsync")!.Invoke(subscriber, new[] { message.MessageContent, stoppingToken })!;
 
                             //ACK
                             await _redisClient.XAckAsync(queueName, groupName, data.id);
@@ -104,17 +87,18 @@ public class SubscriberBackgroundService : BackgroundService
                                         StackTrace = ex.StackTrace,
                                         GroupName = groupName,
                                         QueueName = queueName,
-                                        MessageContent = message.MessageContent,
+                                        ErrorMessageContent = message.MessageContent,
                                         ErrorMessageTimestamp = message.CreateTimestamp
                                     };
                                     await _errorPublisher.PublishAsync(errorMessage);
 
-                                    await subscriber.OnErrorAsync(message, stoppingToken);
+                                    //Execute message
+                                    await (Task) subscriberType.GetMethod("OnErrorAsync")!.Invoke(subscriber, new[] { message.MessageContent, stoppingToken })!;
                                 }
                             }
                             catch (Exception errorEx)
                             {
-                                _logger.LogError(new RedisMQDataException("Handle error exception!", message, errorEx), "Handle error exception!");
+                                _logger?.LogError(new RedisMQDataException("Handle error exception!", message, errorEx), "Handle error exception!");
                             }
                         }
                         finally

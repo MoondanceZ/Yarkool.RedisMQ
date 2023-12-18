@@ -3,7 +3,7 @@
     /// <summary>
     /// 错误队列
     /// </summary>
-    public class ErrorMessage : BaseMessage
+    public class ErrorMessage
     {
         /// <summary>
         /// 对列名称
@@ -29,7 +29,12 @@
         /// 堆栈信息
         /// </summary>
         public string? StackTrace { get; set; }
-        
+
+        /// <summary>
+        /// 错误消息内容
+        /// </summary>
+        public object? ErrorMessageContent { get; set; }
+
         /// <summary>
         /// 错误消息发送时间
         /// </summary>

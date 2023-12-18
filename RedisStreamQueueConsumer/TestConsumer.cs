@@ -1,10 +1,9 @@
-﻿using Newtonsoft.Json;
-using Yarkool.RedisMQ;
+﻿using Yarkool.RedisMQ;
 
 namespace RedisStreamQueue
 {
-    [QueueSubscriber("Test")]
-    internal class TestSubscriber : BaseSubscriber
+    [QueueConsumer("Test")]
+    internal class TestConsumer : BaseConsumer<TestMessage>
     {
         // protected override async Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
         // {
@@ -17,7 +16,7 @@ namespace RedisStreamQueue
         //     throw new NotImplementedException();
         // }
 
-        public override async Task OnMessageAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default)
+        public override Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

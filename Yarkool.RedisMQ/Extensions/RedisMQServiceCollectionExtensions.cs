@@ -1,11 +1,10 @@
 ﻿using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Yarkool.RedisMQ
 {
-    public static class QueueServiceCollectionExtensions
+    public static class RedisMQServiceCollectionExtensions
     {
         /// <summary>
         /// AddRedisMQ
@@ -22,10 +21,11 @@ namespace Yarkool.RedisMQ
 
             services.AddSingleton(queueConfig);
 
-            services.AddSingleton<ErrorPublisher>();
-
             if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();
+
+            if (queueConfig.UseErrorQueue)
+                services.AddSingleton<ErrorPublisher>();
 
             if (queueConfig.AutoInitSubscriber)
                 services.AddRedisMQSubscriber();
@@ -33,13 +33,15 @@ namespace Yarkool.RedisMQ
             if (queueConfig.AutoInitPublisher)
                 services.AddRedisMQPublisher();
 
-            if (queueConfig.AutoRePublishTimeOutMessage)
-                services.AddHostedService<HandlePendingTimeOutService>();
+            // if (queueConfig.AutoRePublishTimeOutMessage)
+            //     services.AddHostedService<HandlePendingTimeOutService>();
+
+            services.AddHostedService<SubscriberBackgroundService>();
+
+            services.AddSingleton<ConsumerExecutorDescriptor>();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);
-
-            // InitializeSubscriber();
 
             return services;
         }
@@ -81,27 +83,18 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddRedisMQSubscriber(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == nameof(BaseSubscriber))).ToList();
+            var basePublisherGenericType = typeof(BaseConsumer<>);
+            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes())
+                .Where(t => t.BaseType is { IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == basePublisherGenericType)
+                .ToList();
 
             foreach (var item in subscriberTypes)
             {
-                services.AddHostedService(item);
+                if (item == typeof(ErrorPublisher))
+                    continue;
+
+                services.AddTransient(item);
             }
-
-            //订阅者这里需要注入错误队列发布者
-            services.AddSingleton<ErrorPublisher>();
-
-            return services;
-        }
-
-        /// <summary>
-        /// 注入Subscriber
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        public static IServiceCollection AddRedisMQSubscriber<TSubscriber>(this IServiceCollection services) where TSubscriber : class, ISubscriber, IHostedService
-        {
-            services.AddHostedService<TSubscriber>();
 
             return services;
         }
@@ -114,27 +107,18 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddRedisMQPublisher(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var publisherTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IPublisher).IsAssignableFrom(t) && t.BaseType?.Name == nameof(BasePublisher))).ToList();
+            var basePublisherGenericType = typeof(BasePublisher<>);
+            var publisherTypes = assemblies.SelectMany(a => a.GetTypes())
+                .Where(t => t.BaseType is { IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == basePublisherGenericType)
+                .ToList();
 
             foreach (var item in publisherTypes)
             {
                 if (item == typeof(ErrorPublisher))
                     continue;
 
-                services.AddSingleton(item);
+                services.AddSingleton(typeof(IConsumer), item);
             }
-
-            return services;
-        }
-
-        /// <summary>
-        /// 注入Publisher
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        private static IServiceCollection AddRedisMQPublisher<TPublisher>(this IServiceCollection services) where TPublisher : class, ISubscriber
-        {
-            services.AddSingleton<TPublisher>();
 
             return services;
         }

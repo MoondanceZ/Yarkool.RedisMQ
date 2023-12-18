@@ -2,7 +2,7 @@
 
 namespace Yarkool.RedisMQ
 {
-    public abstract class BasePublisher : IPublisher
+    public abstract class BasePublisher<TMessage> : IPublisher
     {
         private readonly RedisClient _redisClient;
         private readonly string _queueName;
@@ -15,8 +15,9 @@ namespace Yarkool.RedisMQ
 
             _serializer = queueConfig.Serializer;
 
-            var queueAttr = GetType().GetCustomAttributes(typeof(QueueSubscriberAttribute), false).FirstOrDefault() as QueueSubscriberAttribute;
-            ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueSubscriberAttribute));
+            var type = GetType();
+            var queueAttr = type.GetCustomAttributes(typeof(QueuePublisherAttribute), false).FirstOrDefault() as QueuePublisherAttribute;
+            ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueuePublisherAttribute));
 
             _queueName = $"{queueConfig.RedisPrefix}{queueAttr.QueueName}";
         }
@@ -26,11 +27,11 @@ namespace Yarkool.RedisMQ
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public virtual async Task PublishAsync<TMessage>(TMessage message)
+        public virtual async Task PublishAsync(TMessage message)
         {
             if (message == null)
                 throw new ArgumentNullException(nameof(message));
-            var data = _serializer.Deserialize<Dictionary<string, object>>(_serializer.Serialize(new BaseMessage()
+            var data = _serializer.Deserialize<Dictionary<string, object>>(_serializer.Serialize(new BaseMessage
             {
                 MessageContent = message
             }));

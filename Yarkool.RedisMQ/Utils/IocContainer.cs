@@ -34,7 +34,7 @@ public class IocContainer
         using var scope = _serviceProvider.CreateScope();
         return scope.ServiceProvider.GetService(type);
     }
-    
+
     public static IEnumerable<object?> GetServices(Type type)
     {
         ArgumentNullException.ThrowIfNull(_serviceProvider);

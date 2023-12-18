@@ -14,7 +14,7 @@ using Yarkool.RedisMQ;
 //    config.RedisPrefix = "Test:";
 //});
 
-Console.WriteLine("Subscriber init");
+Console.WriteLine("Consumer init");
 
 var build = new HostBuilder()
     .ConfigureServices(services =>
@@ -33,11 +33,11 @@ var build = new HostBuilder()
 
 build.RunConsoleAsync();
 
-//services.AddTransient<TestSubscriber>();
+//services.AddTransient<TestConsumer>();
 
 //using var buildServiceProvider = services.BuildServiceProvider();
 //var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
-//var testSubscriber = serviceProvider.GetService<TestSubscriber>()!;
+//var testSubscriber = serviceProvider.GetService<TestConsumer>()!;
 
 //testSubscriber.SubcribeAsync().ConfigureAwait(false).GetAwaiter();
 

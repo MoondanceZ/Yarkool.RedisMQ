@@ -3,6 +3,6 @@
 namespace RedisStreamQueue;
 
 [QueuePublisher("Test")]
-public class TestPublisher : BasePublisher
+public class TestPublisher : BasePublisher<TestMessage>
 {
 }
