@@ -27,16 +27,17 @@ namespace Yarkool.RedisMQ
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public virtual async Task PublishAsync(TMessage message)
+        public virtual async Task<string> PublishAsync(TMessage message)
         {
             if (message == null)
                 throw new ArgumentNullException(nameof(message));
-            var data = _serializer.Deserialize<Dictionary<string, object>>(_serializer.Serialize(new BaseMessage
+            var baseMessage = new BaseMessage
             {
                 MessageContent = message
-            }));
+            };
+            var data = _serializer.Deserialize<Dictionary<string, object>>(_serializer.Serialize(baseMessage));
 
-            await _redisClient.XAddAsync(_queueName, data);
+           return await _redisClient.XAddAsync(_queueName, data);
         }
     }
 }

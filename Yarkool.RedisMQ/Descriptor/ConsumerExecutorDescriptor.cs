@@ -20,7 +20,12 @@ public class ConsumerExecutorDescriptor
     public QueueConsumerAttribute QueueConsumerAttribute { get; set; } = default!;
 
     /// <summary>
-    /// QueueTypeInfo
+    /// TypeInfo
     /// </summary>
-    public TypeInfo TypeInfo { get; set; } = default!;
+    public TypeInfo ConsumerTypeInfo { get; set; } = default!;
+    
+    /// <summary>
+    /// MessageTypeInfo
+    /// </summary>
+    public TypeInfo MessageTypeInfo { get; set; } = default!;
 }

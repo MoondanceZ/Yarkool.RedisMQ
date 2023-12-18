@@ -27,18 +27,18 @@ namespace Yarkool.RedisMQ
             if (queueConfig.UseErrorQueue)
                 services.AddSingleton<ErrorPublisher>();
 
-            if (queueConfig.AutoInitSubscriber)
-                services.AddRedisMQSubscriber();
+            if (queueConfig.AutoInitConsumer)
+                services.AddRedisMQConsumer();
 
             if (queueConfig.AutoInitPublisher)
                 services.AddRedisMQPublisher();
 
-            // if (queueConfig.AutoRePublishTimeOutMessage)
-            //     services.AddHostedService<HandlePendingTimeOutService>();
+            services.AddSingleton<ConsumerServiceSelector>();
 
-            services.AddHostedService<SubscriberBackgroundService>();
+            if (queueConfig.IsEnableRePublishTimeOutMessage)
+                services.AddHostedService<HandlePendingTimeOutService>();
 
-            services.AddSingleton<ConsumerExecutorDescriptor>();
+            services.AddHostedService<ConsumerBackgroundService>();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);
@@ -76,19 +76,19 @@ namespace Yarkool.RedisMQ
         }
 
         /// <summary>
-        /// 注入Subscriber
+        /// 注入Consumer
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        private static IServiceCollection AddRedisMQSubscriber(this IServiceCollection services)
+        private static IServiceCollection AddRedisMQConsumer(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var basePublisherGenericType = typeof(BaseConsumer<>);
-            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes())
+            var consumerTypes = assemblies.SelectMany(a => a.GetTypes())
                 .Where(t => t.BaseType is { IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == basePublisherGenericType)
                 .ToList();
 
-            foreach (var item in subscriberTypes)
+            foreach (var item in consumerTypes)
             {
                 if (item == typeof(ErrorPublisher))
                     continue;
@@ -117,7 +117,7 @@ namespace Yarkool.RedisMQ
                 if (item == typeof(ErrorPublisher))
                     continue;
 
-                services.AddSingleton(typeof(IConsumer), item);
+                services.AddSingleton(item);
             }
 
             return services;

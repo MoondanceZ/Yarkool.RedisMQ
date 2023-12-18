@@ -70,7 +70,7 @@ host.RunAsync();
 
 //var pendingResult = cli.XPending("Test:TestQueue", "TestQueue_Group", "-", "+", 10);
 
-//var penddingItem = cli.XReadGroup("TestQueue_Group", "TestQueue_Subscriber_2", 10, 0, false, "Test:TestQueue", "0-0");
+//var penddingItem = cli.XReadGroup("TestQueue_Group", "TestQueue_Consumer_2", 10, 0, false, "Test:TestQueue", "0-0");
 
 //var item = penddingItem.FirstOrDefault()?.entries.FirstOrDefault()?.fieldValues;
 
@@ -78,14 +78,14 @@ host.RunAsync();
 
 //var xConsumers = cli.XInfoConsumers("Test:TestQueue", "TestQueue_Group");
 
-//var p = cli.XPending("x-stream", "group1", "-", "+", 100000, "subscriber-1");
+//var p = cli.XPending("x-stream", "group1", "-", "+", 100000, "consumer-1");
 
 //cli.XAck("x-stream", "group1", "1654697774982-0");
 //cli.XDel("x-stream", "1654697774982-0");
 
-//var data = cli.XClaim("x-stream", "group1", "subscriber-2", 3600, p.Select(x => x.id).ToArray());
+//var data = cli.XClaim("x-stream", "group1", "consumer-2", 3600, p.Select(x => x.id).ToArray());
 
-//var p2 = cli.XPending("x-stream", "group1", "-", "+", 1000000, "subscriber-2");
+//var p2 = cli.XPending("x-stream", "group1", "-", "+", 1000000, "consumer-2");
 
 while (true)
 {

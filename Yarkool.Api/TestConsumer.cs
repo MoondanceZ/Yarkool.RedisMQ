@@ -3,7 +3,7 @@ using Yarkool.RedisMQ;
 
 namespace Yarkool.Api
 {
-    [QueueConsumer("Test")]
+    [QueueConsumer("Test", ConsumerCount = 2)]
     public class TestConsumer : BaseConsumer<TestMessage>
     {
         private readonly ILogger<TestConsumer> _logger;

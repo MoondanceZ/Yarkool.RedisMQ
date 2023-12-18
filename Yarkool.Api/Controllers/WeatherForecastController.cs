@@ -8,7 +8,16 @@ namespace Yarkool.Api.Controllers
     {
         private static readonly string[] Summaries =
         {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+            "Freezing",
+            "Bracing",
+            "Chilly",
+            "Cool",
+            "Mild",
+            "Warm",
+            "Balmy",
+            "Hot",
+            "Sweltering",
+            "Scorching"
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
@@ -33,10 +42,10 @@ namespace Yarkool.Api.Controllers
         }
 
         [HttpGet("GenMessage")]
-        public string GenMessage()
+        public async Task<string> GenMessage()
         {
             var input = Guid.NewGuid().ToString("N");
-            _testPublisher.PublishAsync(new TestMessage
+            await _testPublisher.PublishAsync(new TestMessage
             {
                 Input = input
             });

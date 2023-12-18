@@ -18,7 +18,7 @@
         /// <summary>
         /// 消费者名称
         /// </summary>
-        public string SubscriberName { get; set; } = default!;
+        public string ConsumerName { get; set; } = default!;
 
         /// <summary>
         /// 错误内容

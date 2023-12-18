@@ -13,8 +13,8 @@ builder.Services.AddRedisMQ(cli, config =>
     config.UseErrorQueue = true;
     config.RedisPrefix = "Test:";
     config.AutoInitPublisher = true;
-    config.AutoInitSubscriber = true;
-    config.AutoRePublishTimeOutMessage = true;
+    config.AutoInitConsumer = true;
+    config.IsEnableRePublishTimeOutMessage = true;
 });
 
 var app = builder.Build();

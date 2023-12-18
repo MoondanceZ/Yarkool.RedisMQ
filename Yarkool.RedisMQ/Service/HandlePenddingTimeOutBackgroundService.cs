@@ -11,33 +11,26 @@ namespace Yarkool.RedisMQ
     /// </summary>
     internal class HandlePendingTimeOutService : BackgroundService
     {
+        private readonly ConsumerServiceSelector _consumerServiceSelector;
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
-        private readonly ISerializer _serializer;
+        private readonly ErrorPublisher _errorPublisher;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<HandlePendingTimeOutService> _logger;
-        private readonly Dictionary<Type, QueueConsumerAttribute> _queueSubscriberDic = new();
 
-        public HandlePendingTimeOutService(QueueConfig queueConfig, RedisClient redisClient, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
+        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
         {
-            _queueConfig = queueConfig ?? throw new ArgumentNullException(nameof(queueConfig));
-            _serializer = _queueConfig.Serializer;
-            _redisClient = redisClient ?? throw new ArgumentNullException(nameof(redisClient));
+            _consumerServiceSelector = consumerServiceSelector;
+            _queueConfig = queueConfig;
+            _redisClient = redisClient;
+            _errorPublisher = errorPublisher;
             _serviceProvider = serviceProvider;
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = logger;
 
-            var subscriberServices = _serviceProvider.GetServices(typeof(IConsumer));
-            foreach (var subscriber in subscriberServices)
+            foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
             {
-                var subscriberType = subscriber!.GetType();
-                var queueSubscriberAttribute = subscriberType.GetCustomAttributes(typeof(QueueConsumerAttribute), false).FirstOrDefault() as QueueConsumerAttribute;
-                ArgumentNullException.ThrowIfNull(queueSubscriberAttribute, nameof(QueueConsumerAttribute));
-
-                _queueSubscriberDic.Add(subscriberType, queueSubscriberAttribute);
-
-                var queueName = $"{_queueConfig.RedisPrefix}{queueSubscriberAttribute.QueueName}";
-                var groupName = $"{queueSubscriberAttribute.QueueName}_Group";
-                var subscriberName = $"{queueSubscriberAttribute.QueueName}_Subscriber";
+                var queueName = consumerExecutorDescriptor.QueueName;
+                var groupName = consumerExecutorDescriptor.GroupName;
 
                 //初始化队列信息
                 if (!_redisClient.Exists(queueName))
@@ -53,53 +46,61 @@ namespace Yarkool.RedisMQ
             }
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
             {
-                for (var i = 0; i < _queueSubscriberDic.Count; i++)
+                var consumerType = consumerExecutorDescriptor.ConsumerTypeInfo;
+                var messageType = consumerExecutorDescriptor.MessageTypeInfo;
+                var queueName = consumerExecutorDescriptor.QueueName;
+                var groupName = consumerExecutorDescriptor.GroupName;
+                var consumerName = $"{consumerExecutorDescriptor.QueueName}_Consumer";
+
+                for (var i = 0; i < consumerExecutorDescriptor.QueueConsumerAttribute.ConsumerCount; i++)
                 {
-                    var subscriberIndex = i + 1;
-
-                    var queueSubscriberItem = _queueSubscriberDic.ElementAt(i);
-                    var queueSubscriberAttribute = queueSubscriberItem.Value;
-
-                    var queueName = $"{_queueConfig.RedisPrefix}{queueSubscriberAttribute.QueueName}";
-                    var groupName = $"{queueSubscriberAttribute.QueueName}_Group";
-                    var subscriberName = $"{queueSubscriberAttribute.QueueName}_Subscriber";
-
-                    var actualQueueName = string.IsNullOrEmpty(_queueConfig.RedisPrefix) ? queueName : queueName.Replace(_queueConfig.RedisPrefix, "");
-                    _logger.LogInformation($"{actualQueueName} {subscriberName}_{subscriberIndex} subscribing");
-
-                    var pendingResults = await _redisClient.XReadGroupAsync(groupName, $"{subscriberName}_{subscriberIndex}", 20, 0, false, queueName, "0-0");
-                    if (pendingResults != null && pendingResults.FirstOrDefault()?.entries.Any() == true)
+                    var consumerIndex = i + 1;
+                    Task.Run(async () =>
                     {
-                        foreach (var entry in pendingResults.FirstOrDefault()!.entries)
+                        while (!stoppingToken.IsCancellationRequested)
                         {
-                            long.TryParse(entry.id.Split("-").FirstOrDefault(), out var messageTime);
-                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > queueSubscriberAttribute.PendingTimeOut * 1000;
-                            if (isTimeOutMessage)
+                            // 0-0：标识读取已分配给当前 consumer ，但是还没经过 xack 指令确认的消息
+                            var pendingResults = await _redisClient.XReadGroupAsync(groupName, $"{consumerName}_{consumerIndex}", 20, 5 * 1000, false, queueName, "0-0");
+                            if (pendingResults != null && pendingResults.FirstOrDefault()?.entries.Any() == true)
                             {
-                                var message = MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8);
-                                if (message != null)
+                                foreach (var entry in pendingResults.FirstOrDefault()!.entries)
                                 {
-                                    var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
-                                    await _redisClient.XAddAsync(queueName, data);
-                                }
+                                    long.TryParse(entry.id.Split("-").FirstOrDefault(), out var messageTime);
+                                    var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > consumerExecutorDescriptor.QueueConsumerAttribute.PendingTimeOut * 1000;
+                                    if (isTimeOutMessage)
+                                    {
+                                        var message = MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8);
+                                        if (message != null)
+                                        {
+                                            var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
+                                            await _redisClient.XAddAsync(queueName, data);
+                                        }
 
-                                await _redisClient.XAckAsync(queueName, groupName, entry.id);
-                                await _redisClient.XDelAsync(queueName, entry.id);
+                                        await _redisClient.XAckAsync(queueName, groupName, entry.id);
+                                        await _redisClient.XDelAsync(queueName, entry.id);
+                                    }
+                                }
                             }
                         }
-                    }
+                    }, stoppingToken);
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         private object? MapToClass(object[] list, Type type, Encoding encoding)
         {
             var method = typeof(RespHelper).GetMethod(nameof(RespHelper.MapToClass))?.MakeGenericMethod(type);
-            return method?.Invoke(null, new object[] { list, encoding });
+            return method?.Invoke(null, new object[]
+            {
+                list,
+                encoding
+            });
         }
 
         //private StreamsXPendingConsumerResult[] GetTimeOutPendingResults(RedisClient redisClient, string queueName, string groupName, string start, int pendingTimeOut)

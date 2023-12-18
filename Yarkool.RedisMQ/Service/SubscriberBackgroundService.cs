@@ -6,17 +6,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Yarkool.RedisMQ;
 
-public class SubscriberBackgroundService : BackgroundService
+public class ConsumerBackgroundService : BackgroundService
 {
     private readonly ConsumerServiceSelector _consumerServiceSelector;
+    private readonly QueueConfig _queueConfig;
     private readonly RedisClient _redisClient;
+    private readonly ErrorPublisher _errorPublisher;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<SubscriberBackgroundService> _logger;
+    private readonly ILogger<ConsumerBackgroundService> _logger;
 
-    public SubscriberBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher, IServiceProvider serviceProvider, ILogger<SubscriberBackgroundService> logger)
+    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher, IServiceProvider serviceProvider, ILogger<ConsumerBackgroundService> logger)
     {
         _consumerServiceSelector = consumerServiceSelector;
+        _queueConfig = queueConfig;
         _redisClient = redisClient;
+        _errorPublisher = errorPublisher;
         _serviceProvider = serviceProvider;
         _logger = logger;
 
@@ -39,75 +43,91 @@ public class SubscriberBackgroundService : BackgroundService
         }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        for (var i = 0; i < _consumerServiceSelector.GetConsumerExecutorDescriptors().Count(); i++)
+        foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
         {
-            var subscriberIndex = i + 1;
-            var consumerExecutorDescriptor = _consumerServiceSelector.GetConsumerExecutorDescriptors().ElementAt(i);
-
+            var consumerType = consumerExecutorDescriptor.ConsumerTypeInfo;
+            var messageType = consumerExecutorDescriptor.MessageTypeInfo;
             var queueName = consumerExecutorDescriptor.QueueName;
             var groupName = consumerExecutorDescriptor.GroupName;
-            var subscriberName = $"{consumerExecutorDescriptor.QueueName}_Subscriber";
+            var consumerName = $"{consumerExecutorDescriptor.QueueName}_Consumer";
 
-            _logger?.LogInformation($"{consumerExecutorDescriptor.QueueConsumerAttribute.QueueName} {subscriberName}_{subscriberIndex} subscribing");
-
-            await Task.Run(async () =>
+            for (var i = 0; i < consumerExecutorDescriptor.QueueConsumerAttribute.ConsumerCount; i++)
             {
-                while (!stoppingToken.IsCancellationRequested)
+                var consumerIndex = i + 1;
+                Task.Run(async () =>
                 {
-                    var message = default(BaseMessage);
-                    var data = await _redisClient.XReadGroupAsync(groupName, $"{subscriberName}_{subscriberIndex}", 100, queueName, ">");
-                    if (data != null)
+                    _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing");
+                    while (!stoppingToken.IsCancellationRequested)
                     {
-                        //https://github.com/dotnetcore/CAP/blob/master/src/DotNetCore.CAP/Internal/IConsumerServiceSelector.Default.cs#L21
-                        var subscriber = _serviceProvider.CreateScope().ServiceProvider.GetServices(typeof(IConsumer)).First(x => x?.GetType() == subscriberType);
-                        ArgumentNullException.ThrowIfNull(subscriber, nameof(subscriber));
-                        try
+                        var message = default(BaseMessage);
+                        var messageContent = default(object);
+                        // >：读取最新的消息（尚未分配给某个 consumer 的消息）
+                        var data = await _redisClient.XReadGroupAsync(groupName, $"{consumerName}_{consumerIndex}", 5 * 1000, queueName, ">");
+                        if (data != null)
                         {
-                            message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
-
-                            //Execute message
-                            await (Task) subscriberType.GetMethod("OnMessageAsync")!.Invoke(subscriber, new[] { message.MessageContent, stoppingToken })!;
-
-                            //ACK
-                            await _redisClient.XAckAsync(queueName, groupName, data.id);
-                            await _redisClient.XDelAsync(queueName, data.id);
-                        }
-                        catch (Exception ex)
-                        {
+                            var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
+                            ArgumentNullException.ThrowIfNull(consumer, nameof(consumer));
                             try
                             {
-                                if (_queueConfig.UseErrorQueue && message != null)
-                                {
-                                    var errorMessage = new ErrorMessage
-                                    {
-                                        SubscriberName = subscriberName,
-                                        ExceptionMessage = ex.Message,
-                                        StackTrace = ex.StackTrace,
-                                        GroupName = groupName,
-                                        QueueName = queueName,
-                                        ErrorMessageContent = message.MessageContent,
-                                        ErrorMessageTimestamp = message.CreateTimestamp
-                                    };
-                                    await _errorPublisher.PublishAsync(errorMessage);
+                                message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
+                                
+                                _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
+                                messageContent = _queueConfig.Serializer.Deserialize(message.MessageContent as string, messageType);
 
-                                    //Execute message
-                                    await (Task) subscriberType.GetMethod("OnErrorAsync")!.Invoke(subscriber, new[] { message.MessageContent, stoppingToken })!;
+                                //Execute message
+                                await (Task) consumerType.GetMethod("OnMessageAsync")!.Invoke(consumer, new[]
+                                {
+                                    messageContent,
+                                    stoppingToken
+                                })!;
+
+                                //ACK
+                                await _redisClient.XAckAsync(queueName, groupName, data.id);
+                                await _redisClient.XDelAsync(queueName, data.id);
+                            }
+                            catch (Exception ex)
+                            {
+                                try
+                                {
+                                    if (_queueConfig.UseErrorQueue && message != null)
+                                    {
+                                        var errorMessage = new ErrorMessage
+                                        {
+                                            ConsumerName = consumerName,
+                                            ExceptionMessage = ex.Message,
+                                            StackTrace = ex.StackTrace,
+                                            GroupName = groupName,
+                                            QueueName = queueName,
+                                            ErrorMessageContent = messageContent,
+                                            ErrorMessageTimestamp = message.CreateTimestamp
+                                        };
+                                        await _errorPublisher.PublishAsync(errorMessage);
+
+                                        //Execute message
+                                        await (Task) consumerType.GetMethod("OnErrorAsync")!.Invoke(consumer, new[]
+                                        {
+                                            messageContent,
+                                            stoppingToken
+                                        })!;
+                                    }
+                                }
+                                catch (Exception errorEx)
+                                {
+                                    _logger?.LogError(new RedisMQDataException("Handle error exception!", message, errorEx), "Handle error exception!");
                                 }
                             }
-                            catch (Exception errorEx)
+                            finally
                             {
-                                _logger?.LogError(new RedisMQDataException("Handle error exception!", message, errorEx), "Handle error exception!");
+                                message = null;
                             }
                         }
-                        finally
-                        {
-                            message = null;
-                        }
                     }
-                }
-            }, stoppingToken);
+                }, stoppingToken);
+            }
         }
+        
+        return Task.CompletedTask;
     }
 }
