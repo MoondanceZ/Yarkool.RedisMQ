@@ -2,7 +2,7 @@
 
 namespace Yarkool.RedisMQ
 {
-    public abstract class BasePublisher<TMessage> : IPublisher where TMessage : BaseMessage
+    public abstract class BasePublisher : IPublisher
     {
         private readonly RedisClient _redisClient;
         private readonly string _queueName;
@@ -10,13 +10,13 @@ namespace Yarkool.RedisMQ
 
         public BasePublisher()
         {
-            var queueConfig = IocContainer.Resolve<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
-            _redisClient = IocContainer.Resolve<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
+            var queueConfig = IocContainer.GetService<QueueConfig>() ?? throw new ArgumentNullException(nameof(QueueConfig));
+            _redisClient = IocContainer.GetService<RedisClient>() ?? throw new ArgumentNullException(nameof(RedisClient));
 
             _serializer = queueConfig.Serializer;
 
-            var queueAttr = typeof(TMessage).GetCustomAttributes(typeof(QueueAttribute), false).FirstOrDefault() as QueueAttribute;
-            ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueAttribute));
+            var queueAttr = GetType().GetCustomAttributes(typeof(QueueSubscriberAttribute), false).FirstOrDefault() as QueueSubscriberAttribute;
+            ArgumentNullException.ThrowIfNull(queueAttr, nameof(QueueSubscriberAttribute));
 
             _queueName = $"{queueConfig.RedisPrefix}{queueAttr.QueueName}";
         }
@@ -26,13 +26,16 @@ namespace Yarkool.RedisMQ
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public virtual Task<bool> PublishAsync(TMessage message)
+        public virtual async Task PublishAsync<TMessage>(TMessage message)
         {
-            var data = _serializer.Deserialize<Dictionary<string, string>>(_serializer.Serialize(message));
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
+            var data = _serializer.Deserialize<Dictionary<string, object>>(_serializer.Serialize(new BaseMessage()
+            {
+                MessageContent = message
+            }));
 
-            _redisClient.XAdd(_queueName, data);
-
-            return Task.FromResult(true);
+            await _redisClient.XAddAsync(_queueName, data);
         }
     }
 }

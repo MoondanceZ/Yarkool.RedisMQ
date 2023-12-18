@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FreeRedis;
-
-namespace Yarkool.RedisMQ
+﻿namespace Yarkool.RedisMQ
 {
     /// <summary>
     /// 队列配置
@@ -15,7 +8,7 @@ namespace Yarkool.RedisMQ
         /// <summary>
         /// MessageStorageTime, seconde
         /// </summary>
-        public int MessageStorageTime { get; set; } = (int)TimeSpan.FromDays(7).TotalSeconds;
+        public int MessageStorageTime { get; set; } = (int) TimeSpan.FromDays(7).TotalSeconds;
 
         /// <summary>
         /// 自动初始化订阅者

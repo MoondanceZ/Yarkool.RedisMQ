@@ -1,11 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 using RedisStreamQueue;
-using System.Text;
 using Yarkool.RedisMQ;
 
 Console.WriteLine("Publisher init, input message");
@@ -24,7 +21,7 @@ var build = new HostBuilder()
 
 var host = build.UseConsoleLifetime().Build();
 var services = host.Services;
-host.RunAsync(default(CancellationToken));
+host.RunAsync();
 
 //var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
 //cli.Notice += (s, e) => Console.WriteLine(e.Log);
@@ -42,7 +39,6 @@ host.RunAsync(default(CancellationToken));
 //using var buildServiceProvider = services.BuildServiceProvider();
 //var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
 //var testPublisher = serviceProvider.GetService<TestPublisher>()!;
-
 
 //if (!cli.Exists("x-stream"))
 //{
@@ -104,7 +100,7 @@ while (true)
 
         var testPublisher = services.GetRequiredService<TestPublisher>();
 
-        testPublisher.PublishAsync(new TestMessage()
+        testPublisher.PublishAsync(new TestMessage
         {
             Input = str
         }).ConfigureAwait(false).GetAwaiter();

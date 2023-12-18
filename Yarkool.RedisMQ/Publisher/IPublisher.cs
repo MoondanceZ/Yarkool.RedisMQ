@@ -1,5 +1,5 @@
 ﻿namespace Yarkool.RedisMQ;
 
-public interface IPublisher
+internal interface IPublisher
 {
 }

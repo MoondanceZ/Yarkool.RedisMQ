@@ -2,7 +2,7 @@
 
 namespace Yarkool.Api
 {
-    public class TestPublisher : BasePublisher<TestMessage>
+    public class TestPublisher : BasePublisher
     {
     }
 }

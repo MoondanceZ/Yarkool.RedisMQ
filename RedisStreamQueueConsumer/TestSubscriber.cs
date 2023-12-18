@@ -1,22 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Yarkool.RedisMQ;
 
 namespace RedisStreamQueue
 {
-    internal class TestSubscriber : BaseSubscriber<TestMessage>
+    [QueueSubscriber("Test")]
+    internal class TestSubscriber : BaseSubscriber
     {
-        protected override Task OnMessageAsync(TestMessage message)
-        {
-            Console.WriteLine(JsonConvert.SerializeObject(message));
-            return Task.CompletedTask;
-        }
+        // protected override async Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
+        // {
+        //     Console.WriteLine(JsonConvert.SerializeObject(message));
+        //     await Task.Delay(2000, cancellationToken);
+        // }
+        //
+        // protected override Task OnErrorAsync(CancellationToken cancellationToken = default)
+        // {
+        //     throw new NotImplementedException();
+        // }
 
-        protected override Task OnErrorAsync()
+        public override async Task OnMessageAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

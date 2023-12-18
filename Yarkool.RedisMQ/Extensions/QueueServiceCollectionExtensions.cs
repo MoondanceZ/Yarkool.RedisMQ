@@ -1,12 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FreeRedis;
-using Microsoft.Extensions.Logging;
+﻿using FreeRedis;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Yarkool.RedisMQ
 {
@@ -39,7 +34,7 @@ namespace Yarkool.RedisMQ
                 services.AddRedisMQPublisher();
 
             if (queueConfig.AutoRePublishTimeOutMessage)
-                services.AddHostedService<HandlependingTimeOutService>();
+                services.AddHostedService<HandlePendingTimeOutService>();
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);
@@ -86,7 +81,7 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddRedisMQSubscriber(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseSubscriber<>).Name)).ToList();
+            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == nameof(BaseSubscriber))).ToList();
 
             foreach (var item in subscriberTypes)
             {
@@ -119,7 +114,7 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddRedisMQPublisher(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var publisherTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IPublisher).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BasePublisher<>).Name)).ToList();
+            var publisherTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(IPublisher).IsAssignableFrom(t) && t.BaseType?.Name == nameof(BasePublisher))).ToList();
 
             foreach (var item in publisherTypes)
             {
@@ -144,29 +139,11 @@ namespace Yarkool.RedisMQ
             return services;
         }
 
-
-        /// <summary>
-        /// 初始化消费者
-        /// </summary>
-        private static void InitializeSubscriber()
-        {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var subscriberTypes = assemblies.SelectMany(a => a.GetTypes().Where(t => typeof(ISubscriber).IsAssignableFrom(t) && t.BaseType?.Name == typeof(BaseSubscriber<>).Name)).ToList();
-
-            foreach (var item in subscriberTypes)
-            {
-                if (IocContainer.Resolve(item) is ISubscriber subscriber)
-                {
-                    Task.Run(() => subscriber.SubscribeAsync());
-                }
-            }
-        }
-
         private static IServiceCollection AddHostedService(this IServiceCollection services, Type type)
         {
-            var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethods()
-                .Where(x => x.Name == nameof(ServiceCollectionHostedServiceExtensions.AddHostedService) && x.GetParameters().Length == 1).FirstOrDefault()?
-                .MakeGenericMethod(new Type[] { type });
+            var method = typeof(ServiceCollectionHostedServiceExtensions)
+                .GetMethod(nameof(ServiceCollectionHostedServiceExtensions.AddHostedService), new[] { typeof(IServiceCollection) })
+                ?.MakeGenericMethod(type);
             method?.Invoke(null, new object[] { services });
 
             return services;

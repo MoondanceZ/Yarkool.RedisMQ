@@ -1,9 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using FreeRedis;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RedisStreamQueue;
 using Yarkool.RedisMQ;
 
 //var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
@@ -40,7 +38,6 @@ build.RunConsoleAsync();
 //using var buildServiceProvider = services.BuildServiceProvider();
 //var serviceProvider = buildServiceProvider.CreateScope().ServiceProvider;
 //var testSubscriber = serviceProvider.GetService<TestSubscriber>()!;
-
 
 //testSubscriber.SubcribeAsync().ConfigureAwait(false).GetAwaiter();
 

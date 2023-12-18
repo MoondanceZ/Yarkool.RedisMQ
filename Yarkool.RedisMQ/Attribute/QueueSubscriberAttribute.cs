@@ -1,24 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Yarkool.RedisMQ
+﻿namespace Yarkool.RedisMQ
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public class QueueAttribute : System.Attribute
+    public class QueueSubscriberAttribute(string queueName) : Attribute
     {
-
-        public QueueAttribute(string queueName)
-        {
-            QueueName = queueName;
-        }
-
         /// <summary>
         /// 队列名称
         /// </summary>
-        public string QueueName { get; private set; } = default!;
+        public string QueueName { get; private set; } = queueName;
 
         /// <summary>
         /// 消费者数量

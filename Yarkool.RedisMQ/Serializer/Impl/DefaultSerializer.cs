@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Yarkool.RedisMQ
@@ -11,7 +7,7 @@ namespace Yarkool.RedisMQ
     {
         public T? Deserialize<T>(string data)
         {
-            return JsonSerializer.Deserialize<T>(data, new JsonSerializerOptions()
+            return JsonSerializer.Deserialize<T>(data, new JsonSerializerOptions
             {
                 NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
             });
@@ -27,7 +23,7 @@ namespace Yarkool.RedisMQ
 
         public string Serialize<T>(T data)
         {
-            return JsonSerializer.Serialize(data, new JsonSerializerOptions()
+            return JsonSerializer.Serialize(data, new JsonSerializerOptions
             {
                 NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
             });

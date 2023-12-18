@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Yarkool.RedisMQ
+﻿namespace Yarkool.RedisMQ
 {
     /// <summary>
     /// 错误队列
     /// </summary>
-    [Queue("Error")]
     public class ErrorMessage : BaseMessage
     {
         /// <summary>
@@ -36,10 +29,10 @@ namespace Yarkool.RedisMQ
         /// 堆栈信息
         /// </summary>
         public string? StackTrace { get; set; }
-
+        
         /// <summary>
-        /// 消息内容
+        /// 错误消息发送时间
         /// </summary>
-        public string MessageContent { get; set; } = default!;
+        public long ErrorMessageTimestamp { get; set; }
     }
 }

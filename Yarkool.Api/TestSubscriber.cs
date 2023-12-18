@@ -1,31 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using Yarkool.RedisMQ;
 
 namespace Yarkool.Api
 {
-    public class TestSubscriber : BaseSubscriber<TestMessage>
+    [QueueSubscriber("Test")]
+    public class TestSubscriber : BaseSubscriber
     {
         private readonly ILogger<TestSubscriber> _logger;
-
-        protected override Task OnMessageAsync(TestMessage message)
-        {
-            _logger.LogInformation(message.Input);
-            Console.WriteLine(message.Input);
-            return Task.CompletedTask;
-        }
-
-        protected override Task OnErrorAsync()
-        {
-            throw new NotImplementedException();
-        }
 
         public TestSubscriber(ILogger<TestSubscriber> logger)
         {
             _logger = logger;
+        }
+
+        public override async Task OnMessageAsync<TMessage>(TMessage message, CancellationToken cancellationToken = default)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(message));
+
+            await Task.CompletedTask;
         }
     }
 }
