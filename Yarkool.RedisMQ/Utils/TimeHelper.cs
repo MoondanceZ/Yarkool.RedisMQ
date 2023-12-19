@@ -3,13 +3,21 @@
     internal static class TimeHelper
     {
         /// <summary>
-        /// 获取时间戳
+        /// 获取当前时间戳(秒)
         /// </summary>
-        /// <param name="dateTime"></param>
         /// <returns></returns>
+        public static long GetSecondTimestamp(DateTime? dateTime = null)
+        {
+            return new DateTimeOffset(dateTime.GetValueOrDefault(DateTime.Now)).ToUnixTimeSeconds();
+        }
+
+        /// <summary>  
+        /// 获取当前时间戳(毫秒)
+        /// </summary>  
+        /// <returns>long</returns>  
         public static long GetMillisecondTimestamp(DateTime? dateTime = null)
         {
-            return ((dateTime ?? DateTime.Now).ToUniversalTime().Ticks - new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero).Ticks) / 10000;
+            return new DateTimeOffset(dateTime.GetValueOrDefault(DateTime.Now)).ToUnixTimeMilliseconds();
         }
     }
 }

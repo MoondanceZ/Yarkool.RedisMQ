@@ -58,6 +58,7 @@ public class ConsumerBackgroundService : BackgroundService
             for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
             {
                 var consumerIndex = i + 1;
+                var curConsumerName = $"{consumerName}_{consumerIndex}";
                 Task.Run(async () =>
                 {
                     _logger?.LogInformation($"{consumerName.Replace(_queueConfig.RedisPrefix ?? "", "")}_{consumerIndex} subscribing");
@@ -68,7 +69,7 @@ public class ConsumerBackgroundService : BackgroundService
                         // >：读取最新的消息（尚未分配给某个 consumer 的消息）
                         try
                         {
-                            var data = await _redisClient.XReadGroupAsync(groupName, $"{consumerName}_{consumerIndex}", 5 * 1000, queueName, ">");
+                            var data = await _redisClient.XReadGroupAsync(groupName, curConsumerName, 5 * 1000, queueName, ">");
                             if (data != null)
                             {
                                 var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
@@ -101,7 +102,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             messageContent,
                                             stoppingToken
                                         })!;
-                                        
+
                                         if (_queueConfig.UseErrorQueue && message != null)
                                         {
                                             var errorMessage = new ErrorMessage
@@ -133,6 +134,7 @@ public class ConsumerBackgroundService : BackgroundService
                         catch (Exception ex)
                         {
                             _logger?.LogError(ex, $"{consumerName}_{consumerIndex} read message exception!");
+                            await Task.Delay(30, stoppingToken);
                         }
                     }
                 }, stoppingToken);

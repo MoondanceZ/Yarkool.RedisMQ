@@ -14,7 +14,7 @@
         public int ConsumerCount { get; set; } = 1;
 
         /// <summary>
-        /// 等待超时时间, 默认: 5分钟
+        /// 等待超时时间, 单位: 秒, 默认: 300秒
         /// </summary>
         public int PendingTimeOut { get; set; } = 5 * 60;
     }
