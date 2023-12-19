@@ -23,7 +23,7 @@
         /// <summary>
         /// 使用失败队列
         /// </summary>
-        public bool UseErrorQueue { get; set; } = true;
+        public bool UseErrorQueue { get; set; }
 
         /// <summary>
         /// Redis缓存前缀
