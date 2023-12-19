@@ -8,7 +8,7 @@
         /// <summary>
         /// MessageStorageTime, seconde
         /// </summary>
-        public int MessageStorageTime { get; set; } = (int) TimeSpan.FromDays(7).TotalSeconds;
+        public int MessageStorageTime { get; set; } = (int)TimeSpan.FromDays(7).TotalSeconds;
 
         /// <summary>
         /// 注册消费者服务

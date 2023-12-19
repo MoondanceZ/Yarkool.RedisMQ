@@ -2,8 +2,10 @@
 
 基于`Redis Stream`开发的队列服务, 包含发布者和消费者
 
-##  用法
+## 用法
+
 在 `Program.cs`中注册
+
 ```csharp
 services.AddRedisMQ(cli, config =>
 {
@@ -15,6 +17,7 @@ services.AddRedisMQ(cli, config =>
 ```
 
 创建消费者, 需添加`RedisMQConsumer`特性, 设置`QueueName`, 消费者数量等
+
 ```csharp
 [RedisMQConsumer("Test")]
 internal class TestRedisMqConsumer : IRedisMQConsumer<TestMessage>
@@ -27,7 +30,9 @@ internal class TestRedisMqConsumer : IRedisMQConsumer<TestMessage>
     }
 }
 ```
+
 发布消息, 只需要注入`IRedisMQPublisher`, 调用`PublishAsync`, 参数`QueueName`需要跟消费者的`QueueName`一致
+
 ```csharp
 private readonly IRedisMQPublisher _publisher;
 public WeatherForecastController(IRedisMQPublisher publisher)

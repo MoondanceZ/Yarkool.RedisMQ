@@ -58,36 +58,43 @@ namespace Yarkool.RedisMQ
                     {
                         while (!stoppingToken.IsCancellationRequested)
                         {
-                            // 0-0：标识读取已分配给当前 consumer ，但是还没经过 xack 指令确认的消息
-                            var pendingResults = await _redisClient.XReadGroupAsync(groupName, $"{consumerName}_{consumerIndex}", 20, 5 * 1000, false, queueName, "0-0");
-                            if (pendingResults != null && pendingResults.FirstOrDefault()?.entries.Any() == true)
+                            try
                             {
-                                foreach (var entry in pendingResults.FirstOrDefault()!.entries)
+                                // 0-0：标识读取已分配给当前 consumer ，但是还没经过 xack 指令确认的消息
+                                var pendingResults = await _redisClient.XReadGroupAsync(groupName, $"{consumerName}_{consumerIndex}", 20, 5 * 1000, false, queueName, "0-0");
+                                if (pendingResults != null && pendingResults.FirstOrDefault()?.entries.Any() == true)
                                 {
-                                    if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)
+                                    foreach (var entry in pendingResults.FirstOrDefault()!.entries)
                                     {
-                                        var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > consumerExecutorDescriptor.RedisMQConsumerAttribute.PendingTimeOut * 1000;
-                                        if (isTimeOutMessage)
+                                        if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)
                                         {
-                                            message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
-                                            var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
-                                            await _redisClient.XAddAsync(queueName, data);
-                                        }
+                                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > consumerExecutorDescriptor.RedisMQConsumerAttribute.PendingTimeOut * 1000;
+                                            if (isTimeOutMessage)
+                                            {
+                                                message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
+                                                var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
+                                                await _redisClient.XAddAsync(queueName, data);
+                                            }
 
-                                        await _redisClient.XAckAsync(queueName, groupName, entry.id);
-                                        await _redisClient.XDelAsync(queueName, entry.id);
-                                    }
-                                    else
-                                    {
-                                        long.TryParse(entry.id.Split("-").FirstOrDefault(), out var messageTime);
-                                        var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > consumerExecutorDescriptor.RedisMQConsumerAttribute.PendingTimeOut * 1000;
-                                        if (isTimeOutMessage)
-                                        {
                                             await _redisClient.XAckAsync(queueName, groupName, entry.id);
                                             await _redisClient.XDelAsync(queueName, entry.id);
                                         }
+                                        else
+                                        {
+                                            long.TryParse(entry.id.Split("-").FirstOrDefault(), out var messageTime);
+                                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > consumerExecutorDescriptor.RedisMQConsumerAttribute.PendingTimeOut * 1000;
+                                            if (isTimeOutMessage)
+                                            {
+                                                await _redisClient.XAckAsync(queueName, groupName, entry.id);
+                                                await _redisClient.XDelAsync(queueName, entry.id);
+                                            }
+                                        }
                                     }
                                 }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogError(ex, "Handle non ack data exception!");
                             }
                         }
                     }, stoppingToken);
