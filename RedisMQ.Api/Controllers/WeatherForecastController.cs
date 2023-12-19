@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Yarkool.RedisMQ;
 
-namespace Yarkool.Api.Controllers
+namespace RedisMQ.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
@@ -21,12 +22,12 @@ namespace Yarkool.Api.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
-        private readonly TestPublisher _testPublisher;
+        private readonly IRedisMQPublisher _publisher;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, TestPublisher testPublisher)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IRedisMQPublisher publisher)
         {
             _logger = logger;
-            _testPublisher = testPublisher;
+            _publisher = publisher;
         }
 
         [HttpGet]
@@ -45,11 +46,11 @@ namespace Yarkool.Api.Controllers
         public async Task<string> GenMessage()
         {
             var input = Guid.NewGuid().ToString("N");
-            await _testPublisher.PublishAsync(new TestMessage
+            var messageId = await _publisher.PublishAsync("Test", new TestMessage
             {
                 Input = input
             });
-            return input;
+            return $"{messageId}-{input}";
         }
     }
 }

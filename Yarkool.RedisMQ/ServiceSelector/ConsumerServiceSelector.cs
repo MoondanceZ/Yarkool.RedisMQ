@@ -11,30 +11,32 @@ public class ConsumerServiceSelector
         _cacheList = new List<ConsumerExecutorDescriptor>();
 
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        var basePublisherGenericType = typeof(BaseConsumer<>);
-        var consumerTypes = assemblies.SelectMany(a => a.GetTypes())
-            .Where(t => t.BaseType is
-            {
-                IsGenericType: true
-            } && t.BaseType.GetGenericTypeDefinition() == basePublisherGenericType)
+        var consumerTypes = assemblies.SelectMany(x => x.GetTypes())
+            .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRedisMQConsumer<>)))
             .ToList();
 
         foreach (var consumerType in consumerTypes)
         {
-            var baseType = consumerType.BaseType;
-            var queueConsumerAttribute = consumerType.GetCustomAttributes(typeof(QueueConsumerAttribute), false).FirstOrDefault() as QueueConsumerAttribute;
-            ArgumentNullException.ThrowIfNull(queueConsumerAttribute, nameof(QueueConsumerAttribute));
+            var interfaceType = consumerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRedisMQConsumer<>))!;
+            var queueConsumerAttribute = consumerType.GetCustomAttributes(typeof(RedisMQConsumerAttribute), false).FirstOrDefault() as RedisMQConsumerAttribute;
+            if (queueConsumerAttribute == null)
+                throw new RedisMQException($"{consumerType.Name} doesn't have a `RedisMQConsumerAttribute`!");
+            if (string.IsNullOrEmpty(queueConsumerAttribute.QueueName))
+                throw new RedisMQException($"{consumerType.Name}'s `RedisMQConsumerAttribute` queue name is null or empty!");
 
             var queueName = $"{queueConfig.RedisPrefix}{queueConsumerAttribute.QueueName}";
             var groupName = $"{queueConsumerAttribute.QueueName}_Group";
 
+            if (_cacheList.Any(x => x.QueueName == queueName))
+                throw new RedisMQException($"Cannot add queue `{queueName}` repeatedly!");
+
             _cacheList.Add(new ConsumerExecutorDescriptor
             {
                 ConsumerTypeInfo = consumerType.GetTypeInfo(),
-                MessageTypeInfo = baseType!.GetGenericArguments()[0].GetTypeInfo(),
+                MessageTypeInfo = interfaceType.GetGenericArguments()[0].GetTypeInfo(),
                 QueueName = queueName,
                 GroupName = groupName,
-                QueueConsumerAttribute = queueConsumerAttribute
+                RedisMQConsumerAttribute = queueConsumerAttribute
             });
         }
     }

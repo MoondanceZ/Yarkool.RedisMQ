@@ -15,15 +15,15 @@ public class ConsumerExecutorDescriptor
     public string GroupName { get; set; } = default!;
 
     /// <summary>
-    /// QueueConsumerAttribute
+    /// RedisMQConsumerAttribute
     /// </summary>
-    public QueueConsumerAttribute QueueConsumerAttribute { get; set; } = default!;
+    public RedisMQConsumerAttribute RedisMQConsumerAttribute { get; set; } = default!;
 
     /// <summary>
     /// TypeInfo
     /// </summary>
     public TypeInfo ConsumerTypeInfo { get; set; } = default!;
-    
+
     /// <summary>
     /// MessageTypeInfo
     /// </summary>

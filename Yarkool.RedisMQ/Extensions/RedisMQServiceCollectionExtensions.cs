@@ -24,21 +24,19 @@ namespace Yarkool.RedisMQ
             if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();
 
-            if (queueConfig.UseErrorQueue)
-                services.AddSingleton<ErrorPublisher>();
+            if (queueConfig.UseErrorQueue && string.IsNullOrEmpty(queueConfig.ErrorQueueName))
+                throw new RedisMQException("error queue name cannot be empty!");
 
-            if (queueConfig.AutoInitConsumer)
-                services.AddRedisMQConsumer();
-
-            if (queueConfig.AutoInitPublisher)
-                services.AddRedisMQPublisher();
-
+            services.AddRedisMQConsumer();
+            services.AddSingleton<IRedisMQPublisher, RedisMQPublisher>();
             services.AddSingleton<ConsumerServiceSelector>();
 
-            if (queueConfig.IsEnableRePublishTimeOutMessage)
-                services.AddHostedService<HandlePendingTimeOutService>();
-
-            services.AddHostedService<ConsumerBackgroundService>();
+            if (queueConfig.RegisterConsumerService)
+            {
+                services.AddHostedService<ConsumerBackgroundService>();
+                if (queueConfig.RepublishNonAckTimeOutMessage)
+                    services.AddHostedService<HandlePendingTimeOutService>();
+            }
 
             var serviceProvider = services.BuildServiceProvider();
             IocContainer.Initialize(serviceProvider);
@@ -80,44 +78,16 @@ namespace Yarkool.RedisMQ
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        private static IServiceCollection AddRedisMQConsumer(this IServiceCollection services)
+        public static IServiceCollection AddRedisMQConsumer(this IServiceCollection services)
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var basePublisherGenericType = typeof(BaseConsumer<>);
-            var consumerTypes = assemblies.SelectMany(a => a.GetTypes())
-                .Where(t => t.BaseType is { IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == basePublisherGenericType)
+            var consumerTypes = assemblies.SelectMany(x => x.GetTypes())
+                .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRedisMQConsumer<>)))
                 .ToList();
 
             foreach (var item in consumerTypes)
             {
-                if (item == typeof(ErrorPublisher))
-                    continue;
-
                 services.AddTransient(item);
-            }
-
-            return services;
-        }
-
-        /// <summary>
-        /// 注入Publisher
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        private static IServiceCollection AddRedisMQPublisher(this IServiceCollection services)
-        {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var basePublisherGenericType = typeof(BasePublisher<>);
-            var publisherTypes = assemblies.SelectMany(a => a.GetTypes())
-                .Where(t => t.BaseType is { IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == basePublisherGenericType)
-                .ToList();
-
-            foreach (var item in publisherTypes)
-            {
-                if (item == typeof(ErrorPublisher))
-                    continue;
-
-                services.AddSingleton(item);
             }
 
             return services;
@@ -125,10 +95,15 @@ namespace Yarkool.RedisMQ
 
         private static IServiceCollection AddHostedService(this IServiceCollection services, Type type)
         {
-            var method = typeof(ServiceCollectionHostedServiceExtensions)
-                .GetMethod(nameof(ServiceCollectionHostedServiceExtensions.AddHostedService), new[] { typeof(IServiceCollection) })
-                ?.MakeGenericMethod(type);
-            method?.Invoke(null, new object[] { services });
+            var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethod(nameof(ServiceCollectionHostedServiceExtensions.AddHostedService),
+                new[]
+                {
+                    typeof(IServiceCollection)
+                })?.MakeGenericMethod(type);
+            method?.Invoke(null, new object[]
+            {
+                services
+            });
 
             return services;
         }

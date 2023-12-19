@@ -19,7 +19,7 @@ namespace Yarkool.RedisMQ
         {
             if (string.IsNullOrEmpty(data))
                 return null;
-            return JsonSerializer.Deserialize(data, type, new JsonSerializerOptions()
+            return JsonSerializer.Deserialize(data, type, new JsonSerializerOptions
             {
                 NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
             });

@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using FreeRedis;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -14,16 +13,14 @@ namespace Yarkool.RedisMQ
         private readonly ConsumerServiceSelector _consumerServiceSelector;
         private readonly QueueConfig _queueConfig;
         private readonly RedisClient _redisClient;
-        private readonly ErrorPublisher _errorPublisher;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<HandlePendingTimeOutService> _logger;
 
-        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
+        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
         {
             _consumerServiceSelector = consumerServiceSelector;
             _queueConfig = queueConfig;
             _redisClient = redisClient;
-            _errorPublisher = errorPublisher;
             _serviceProvider = serviceProvider;
             _logger = logger;
 
@@ -50,13 +47,11 @@ namespace Yarkool.RedisMQ
         {
             foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
             {
-                var consumerType = consumerExecutorDescriptor.ConsumerTypeInfo;
-                var messageType = consumerExecutorDescriptor.MessageTypeInfo;
                 var queueName = consumerExecutorDescriptor.QueueName;
                 var groupName = consumerExecutorDescriptor.GroupName;
                 var consumerName = $"{consumerExecutorDescriptor.QueueName}_Consumer";
 
-                for (var i = 0; i < consumerExecutorDescriptor.QueueConsumerAttribute.ConsumerCount; i++)
+                for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
                 {
                     var consumerIndex = i + 1;
                     Task.Run(async () =>
@@ -69,19 +64,28 @@ namespace Yarkool.RedisMQ
                             {
                                 foreach (var entry in pendingResults.FirstOrDefault()!.entries)
                                 {
-                                    long.TryParse(entry.id.Split("-").FirstOrDefault(), out var messageTime);
-                                    var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > consumerExecutorDescriptor.QueueConsumerAttribute.PendingTimeOut * 1000;
-                                    if (isTimeOutMessage)
+                                    if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)
                                     {
-                                        var message = MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8);
-                                        if (message != null)
+                                        var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > consumerExecutorDescriptor.RedisMQConsumerAttribute.PendingTimeOut * 1000;
+                                        if (isTimeOutMessage)
                                         {
+                                            message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
                                             var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
                                             await _redisClient.XAddAsync(queueName, data);
                                         }
 
                                         await _redisClient.XAckAsync(queueName, groupName, entry.id);
                                         await _redisClient.XDelAsync(queueName, entry.id);
+                                    }
+                                    else
+                                    {
+                                        long.TryParse(entry.id.Split("-").FirstOrDefault(), out var messageTime);
+                                        var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > consumerExecutorDescriptor.RedisMQConsumerAttribute.PendingTimeOut * 1000;
+                                        if (isTimeOutMessage)
+                                        {
+                                            await _redisClient.XAckAsync(queueName, groupName, entry.id);
+                                            await _redisClient.XDelAsync(queueName, entry.id);
+                                        }
                                     }
                                 }
                             }

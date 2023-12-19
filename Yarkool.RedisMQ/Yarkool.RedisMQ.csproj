@@ -6,11 +6,42 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <PackageId>Yarkool.RedisMQ</PackageId>
+        <PackageIcon>LOGO.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://gitee.com/roundking/redis-stream-queue/tree/master</PackageProjectUrl>
+        <PackageTags>Redis Stream MQ FreeRedis RedisQueue 队列</PackageTags>
+        <Version>1.0.0</Version>
+        <Description>
+            基于Redis Stream 开发的队列服务, 包含发布者和消费者
+            A queue service developed based on Redis Stream, including publishers and consumers.
+        </Description>
+        <Authors>MoondanceZ</Authors>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://gitee.com/roundking/Yarkool.RedisMQ</RepositoryUrl>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <Deterministic>true</Deterministic>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="FreeRedis" Version="1.2.10"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../LOGO.png" Pack="true" PackagePath="/"/>
+        <None Include="../README.md" Pack="true" PackagePath="/"/>
     </ItemGroup>
 
 </Project>

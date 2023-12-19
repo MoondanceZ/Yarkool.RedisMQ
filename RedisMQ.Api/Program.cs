@@ -11,10 +11,9 @@ var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
 builder.Services.AddRedisMQ(cli, config =>
 {
     config.UseErrorQueue = true;
-    config.RedisPrefix = "Test:";
-    config.AutoInitPublisher = true;
-    config.AutoInitConsumer = true;
-    config.IsEnableRePublishTimeOutMessage = true;
+    config.RedisPrefix = "RedisMQ:";
+    config.RegisterConsumerService = true;
+    config.RepublishNonAckTimeOutMessage = true;
 });
 
 var app = builder.Build();

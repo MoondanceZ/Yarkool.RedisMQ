@@ -11,29 +11,29 @@
         public int MessageStorageTime { get; set; } = (int) TimeSpan.FromDays(7).TotalSeconds;
 
         /// <summary>
-        /// 自动初始化订阅者
+        /// 注册消费者服务
         /// </summary>
-        public bool AutoInitConsumer { get; set; }
+        public bool RegisterConsumerService { get; set; }
 
         /// <summary>
-        /// 自动初始化发布者
+        /// 自动重新发布未Ack超时的消息
         /// </summary>
-        public bool AutoInitPublisher { get; set; }
-
-        /// <summary>
-        /// 自动重新发布超时消息
-        /// </summary>
-        public bool IsEnableRePublishTimeOutMessage { get; set; }
+        public bool RepublishNonAckTimeOutMessage { get; set; } = true;
 
         /// <summary>
         /// 使用失败队列
         /// </summary>
-        public bool UseErrorQueue { get; set; }
+        public bool UseErrorQueue { get; set; } = true;
 
         /// <summary>
         /// Redis缓存前缀
         /// </summary>
         public string? RedisPrefix { get; set; }
+
+        /// <summary>
+        /// 消息消费失败队列
+        /// </summary>
+        public string ErrorQueueName { get; set; } = "ErrorQueue";
 
         /// <summary>
         /// 序列化器

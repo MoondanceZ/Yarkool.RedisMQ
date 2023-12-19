@@ -11,16 +11,16 @@ public class ConsumerBackgroundService : BackgroundService
     private readonly ConsumerServiceSelector _consumerServiceSelector;
     private readonly QueueConfig _queueConfig;
     private readonly RedisClient _redisClient;
-    private readonly ErrorPublisher _errorPublisher;
+    private readonly IRedisMQPublisher _publisher;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ConsumerBackgroundService> _logger;
 
-    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, ErrorPublisher errorPublisher, IServiceProvider serviceProvider, ILogger<ConsumerBackgroundService> logger)
+    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, IRedisMQPublisher publisher, IServiceProvider serviceProvider, ILogger<ConsumerBackgroundService> logger)
     {
         _consumerServiceSelector = consumerServiceSelector;
         _queueConfig = queueConfig;
         _redisClient = redisClient;
-        _errorPublisher = errorPublisher;
+        _publisher = publisher;
         _serviceProvider = serviceProvider;
         _logger = logger;
 
@@ -53,7 +53,7 @@ public class ConsumerBackgroundService : BackgroundService
             var groupName = consumerExecutorDescriptor.GroupName;
             var consumerName = $"{consumerExecutorDescriptor.QueueName}_Consumer";
 
-            for (var i = 0; i < consumerExecutorDescriptor.QueueConsumerAttribute.ConsumerCount; i++)
+            for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
             {
                 var consumerIndex = i + 1;
                 Task.Run(async () =>
@@ -72,7 +72,7 @@ public class ConsumerBackgroundService : BackgroundService
                             try
                             {
                                 message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
-                                
+
                                 _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
                                 messageContent = _queueConfig.Serializer.Deserialize(message.MessageContent as string, messageType);
 
@@ -103,7 +103,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             ErrorMessageContent = messageContent,
                                             ErrorMessageTimestamp = message.CreateTimestamp
                                         };
-                                        await _errorPublisher.PublishAsync(errorMessage);
+                                        await _publisher.PublishAsync(_queueConfig.ErrorQueueName, errorMessage);
 
                                         //Execute message
                                         await (Task) consumerType.GetMethod("OnErrorAsync")!.Invoke(consumer, new[]
@@ -127,7 +127,7 @@ public class ConsumerBackgroundService : BackgroundService
                 }, stoppingToken);
             }
         }
-        
+
         return Task.CompletedTask;
     }
 }

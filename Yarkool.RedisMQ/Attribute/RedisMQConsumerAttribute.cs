@@ -1,7 +1,7 @@
 ﻿namespace Yarkool.RedisMQ
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public class QueueConsumerAttribute(string queueName) : Attribute
+    public class RedisMQConsumerAttribute(string queueName) : Attribute
     {
         /// <summary>
         /// 队列名称

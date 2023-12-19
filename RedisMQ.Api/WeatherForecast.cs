@@ -1,4 +1,4 @@
-namespace Yarkool.Api
+namespace RedisMQ.Api
 {
     public class WeatherForecast
     {
