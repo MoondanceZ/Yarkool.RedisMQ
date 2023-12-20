@@ -9,6 +9,11 @@
         public string QueueName { get; private set; } = queueName;
 
         /// <summary>
+        /// 是否是延迟队列消费者
+        /// </summary>
+        public bool IsDelayQueueConsumer { get; set; }
+
+        /// <summary>
         /// 消费者数量
         /// </summary>
         public int ConsumerCount { get; set; } = 1;

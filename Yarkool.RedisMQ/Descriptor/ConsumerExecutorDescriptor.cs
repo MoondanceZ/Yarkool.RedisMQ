@@ -15,6 +15,11 @@ public class ConsumerExecutorDescriptor
     public string GroupName { get; set; } = default!;
 
     /// <summary>
+    /// 是否是延迟队列消费者
+    /// </summary>
+    public bool IsDelayQueueConsumer { get; set; }
+
+    /// <summary>
     /// 等待超时时间, 单位: 秒, 默认: 300秒
     /// </summary>
     public int PendingTimeOut { get; set; } = 300;

@@ -1,6 +1,6 @@
 ﻿namespace Yarkool.RedisMQ;
 
-public interface IRedisMQConsumer<TMessage>
+public interface IRedisMQConsumer<in TMessage>
 {
     /// <summary>
     /// On Message

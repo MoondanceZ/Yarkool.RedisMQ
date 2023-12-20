@@ -16,7 +16,7 @@ services.AddRedisMQ(cli, config =>
 });
 ```
 
-创建消费者, 需添加`RedisMQConsumer`特性, 设置`QueueName`, 消费者数量等
+创建消费者, 需添加`RedisMQConsumer`特性, 设置`QueueName`, 消费者数量等, 延迟队列需要设置`IsDelayQueueConsumer = true`
 
 ```csharp
 [RedisMQConsumer("Test")]
@@ -40,14 +40,27 @@ public WeatherForecastController(IRedisMQPublisher publisher)
     _publisher = publisher;
 }
 
-[HttpGet("GenMessage")]
-public async Task<string> GenMessage()
+// 发送普通队列消息
+[HttpPost("PublishMessage")]
+public async Task<string> PublishMessage()
 {
     var input = Guid.NewGuid().ToString("N");
-    var messageId = await _publisher.PublishAsync("Test", new TestMessage
+    var messageId = await _publisher.PublishMessageAsync("Test", new TestMessage
     {
         Input = input
     });
+    return $"{messageId}-{input}";
+}
+
+// 发送延迟队列消息
+[HttpPost("PublishDelayMessage")]
+public async Task<string> PublishDelayMessage()
+{
+    var input = Guid.NewGuid().ToString("N");
+    var messageId = await _publisher.PublishMessageAsync("Delay", new TestMessage
+    {
+        Input = input
+    }, TimeSpan.FromSeconds(10));
     return $"{messageId}-{input}";
 }
 ```

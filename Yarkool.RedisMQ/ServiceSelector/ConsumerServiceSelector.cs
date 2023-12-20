@@ -36,6 +36,7 @@ public class ConsumerServiceSelector
                 MessageTypeInfo = interfaceType.GetGenericArguments()[0].GetTypeInfo(),
                 QueueName = queueName,
                 GroupName = groupName,
+                IsDelayQueueConsumer = queueConsumerAttribute.IsDelayQueueConsumer,
                 PendingTimeOut = queueConsumerAttribute.PendingTimeOut,
                 RedisMQConsumerAttribute = queueConsumerAttribute
             });

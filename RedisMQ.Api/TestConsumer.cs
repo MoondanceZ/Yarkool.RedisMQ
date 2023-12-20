@@ -8,7 +8,6 @@ namespace RedisMQ.Api
         public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
         {
             logger.LogInformation(message.Input);
-            // Console.WriteLine(message.Input);
             return Task.CompletedTask;
         }
     }

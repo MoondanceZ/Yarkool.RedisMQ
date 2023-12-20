@@ -52,8 +52,12 @@ public class ConsumerBackgroundService : BackgroundService
             var queueName = consumerExecutorDescriptor.QueueName;
             var groupName = consumerExecutorDescriptor.GroupName;
             var consumerName = $"{consumerExecutorDescriptor.QueueName}_Consumer";
+            var isDelayQueueConsumer = consumerExecutorDescriptor.IsDelayQueueConsumer;
             var onMessageAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnMessageAsync))!;
             var onErrorAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnErrorAsync))!;
+
+            if (isDelayQueueConsumer)
+                Task.Run(() => ExecuteDelayQueuePollingAsync(queueName, stoppingToken), stoppingToken);
 
             for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
             {
@@ -91,6 +95,12 @@ public class ConsumerBackgroundService : BackgroundService
                                     //ACK
                                     await _redisClient.XAckAsync(queueName, groupName, data.id);
                                     await _redisClient.XDelAsync(queueName, data.id);
+
+                                    if (isDelayQueueConsumer)
+                                    {
+                                        var messageIdHSetName = $"{queueName}:MessageId";
+                                        await _redisClient.HDelAsync(messageIdHSetName, message.MessageId);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -115,7 +125,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 ErrorMessageContent = messageContent,
                                                 ErrorMessageTimestamp = message.CreateTimestamp
                                             };
-                                            await _publisher.PublishAsync(_queueConfig.ErrorQueueName, errorMessage);
+                                            await _publisher.PublishMessageAsync(_queueConfig.ErrorQueueName, errorMessage);
                                         }
                                     }
                                     catch (Exception errorEx)
@@ -142,5 +152,48 @@ public class ConsumerBackgroundService : BackgroundService
         }
 
         return Task.CompletedTask;
+    }
+
+    private async Task ExecuteDelayQueuePollingAsync(string queueName, CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var delayTimeSortedSetName = $"{queueName}:DelayTimeType";
+            var delaySecondsSet = _redisClient.SMembers<double>(delayTimeSortedSetName);
+            if (delaySecondsSet != null && delaySecondsSet.Any())
+            {
+                await Parallel.ForEachAsync(delaySecondsSet, stoppingToken, async (delaySeconds, _) =>
+                {
+                    var delayQueueName = $"{delayTimeSortedSetName}:{delaySeconds}";
+                    var value = await _redisClient.ZRangeByScoreAsync(delayQueueName, 0, TimeHelper.GetMillisecondTimestamp());
+                    if (value != null && value.Any())
+                    {
+                        foreach (var item in value)
+                        {
+                            var baseMessage = _queueConfig.Serializer.Deserialize<BaseMessage>(item ?? "");
+                            if (baseMessage == null)
+                                continue;
+
+                            var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(baseMessage));
+                            var queueMessageId = await _redisClient.XAddAsync(queueName, data);
+                            var messageIdHSetName = $"{queueName}:MessageId";
+                            await _redisClient.HSetAsync(messageIdHSetName, baseMessage.MessageId, new MessageModel
+                            {
+                                QueueName = queueName,
+                                DelayQueueName = delayQueueName,
+                                Status = MessageStatus.Processing,
+                                Message = baseMessage,
+                                QueueMessageId = queueMessageId // use to delete message
+                            });
+                            await _redisClient.ZRemAsync(delayQueueName, item);
+                        }
+                    }
+                });
+            }
+            else
+            {
+                await Task.Delay(1000, stoppingToken);
+            }
+        }
     }
 }
