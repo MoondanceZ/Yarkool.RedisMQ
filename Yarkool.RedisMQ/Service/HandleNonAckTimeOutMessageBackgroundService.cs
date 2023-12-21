@@ -12,11 +12,11 @@ namespace Yarkool.RedisMQ
     {
         private readonly ConsumerServiceSelector _consumerServiceSelector;
         private readonly QueueConfig _queueConfig;
-        private readonly RedisClient _redisClient;
+        private readonly IRedisClient _redisClient;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<HandlePendingTimeOutService> _logger;
 
-        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, RedisClient redisClient, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
+        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, IRedisClient redisClient, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
         {
             _consumerServiceSelector = consumerServiceSelector;
             _queueConfig = queueConfig;
@@ -63,39 +63,38 @@ namespace Yarkool.RedisMQ
                             try
                             {
                                 var timeOutMessageIdTimestamp = TimeHelper.GetMillisecondTimestamp() - pendingTimeOut;
-                                var timeOutPendingResults = await _redisClient.XPendingAsync(queueName, groupName, "0-0", $"{timeOutMessageIdTimestamp}-0", 50, curConsumerName);
+                                var timeOutPendingResults = await _redisClient.XPendingAsync(queueName, groupName, "0-0", $"{timeOutMessageIdTimestamp}-0", 50, curConsumerName).ConfigureAwait(false);
                                 if (timeOutPendingResults != null && timeOutPendingResults.Length != 0)
                                 {
                                     foreach (var result in timeOutPendingResults)
                                     {
                                         var messageId = result.id;
-                                        var messageRange = await _redisClient.XRangeAsync(queueName, messageId, messageId);
-                                        if (messageRange is { Length: > 0 })
+                                        var messageRange = await _redisClient.XRangeAsync(queueName, messageId, messageId).ConfigureAwait(false);
+                                        if (messageRange is not { Length: > 0 }) 
+                                            continue;
+                                        var entry = messageRange[0];
+                                        if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)
                                         {
-                                            var entry = messageRange[0];
-                                            if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)
+                                            // 再判一次是否超时
+                                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > pendingTimeOut;
+                                            if (isTimeOutMessage)
                                             {
-                                                // 再判一次是否超时
-                                                var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > pendingTimeOut;
-                                                if (isTimeOutMessage)
-                                                {
-                                                    message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
-                                                    var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
-                                                    await _redisClient.XAddAsync(queueName, data);
-                                                }
-
-                                                await _redisClient.XAckAsync(queueName, groupName, entry.id);
-                                                await _redisClient.XDelAsync(queueName, entry.id);
+                                                message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
+                                                var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
+                                                await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
                                             }
-                                            else
+
+                                            await _redisClient.XAckAsync(queueName, groupName, entry.id).ConfigureAwait(false);
+                                            await _redisClient.XDelAsync(queueName, entry.id).ConfigureAwait(false);
+                                        }
+                                        else
+                                        {
+                                            long.TryParse(messageRange[0].id.Split("-").FirstOrDefault(), out var messageTime);
+                                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > pendingTimeOut;
+                                            if (isTimeOutMessage)
                                             {
-                                                long.TryParse(messageRange[0].id.Split("-").FirstOrDefault(), out var messageTime);
-                                                var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > pendingTimeOut;
-                                                if (isTimeOutMessage)
-                                                {
-                                                    await _redisClient.XAckAsync(queueName, groupName, entry.id);
-                                                    await _redisClient.XDelAsync(queueName, entry.id);
-                                                }
+                                                await _redisClient.XAckAsync(queueName, groupName, entry.id).ConfigureAwait(false);
+                                                await _redisClient.XDelAsync(queueName, entry.id).ConfigureAwait(false);
                                             }
                                         }
                                     }
@@ -126,24 +125,5 @@ namespace Yarkool.RedisMQ
                 encoding
             });
         }
-
-        //private StreamsXPendingConsumerResult[] GetTimeOutPendingResults(RedisClient redisClient, string queueName, string groupName, string start, int pendingTimeOut)
-        //{
-        //    var list = new List<StreamsXPendingConsumerResult>();
-        //    var pendingResults = redisClient.XPending(queueName, groupName, start, "+", 50);
-        //    if (pendingResults != null && pendingResults.Any())
-        //    {
-        //        var timeOutResults = pendingResults.Where(x => x.idle > pendingTimeOut * 1000).ToList();
-        //        list.AddRange(timeOutResults);
-
-        //        var lastTimeOutResult = timeOutResults.LastOrDefault(x => x.idle > pendingTimeOut * 1000);
-        //        if (lastTimeOutResult != null)
-        //        {
-        //            list.AddRange(GetTimeOutPendingResults(redisClient, queueName, groupName, lastTimeOutResult.id, pendingTimeOut));
-        //        }
-        //    }
-
-        //    return list.ToArray();
-        //}
     }
 }

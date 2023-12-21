@@ -25,6 +25,11 @@ public class ConsumerExecutorDescriptor
     public int PendingTimeOut { get; set; } = 300;
 
     /// <summary>
+    /// 拉取消息数量
+    /// </summary>
+    public int PrefetchCount { get; set; } = 10;
+
+    /// <summary>
     /// RedisMQConsumerAttribute
     /// </summary>
     public RedisMQConsumerAttribute RedisMQConsumerAttribute { get; set; } = default!;

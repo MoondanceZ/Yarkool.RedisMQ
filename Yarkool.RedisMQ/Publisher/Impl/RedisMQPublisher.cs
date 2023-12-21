@@ -5,7 +5,7 @@ namespace Yarkool.RedisMQ
     public class RedisMQPublisher
     (
         QueueConfig queueConfig,
-        RedisClient redisClient
+        IRedisClient redisClient
     ) : IRedisMQPublisher
     {
         /// <summary>

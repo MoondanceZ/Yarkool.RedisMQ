@@ -22,5 +22,10 @@
         /// 等待超时时间, 单位: 秒, 默认: 300秒
         /// </summary>
         public int PendingTimeOut { get; set; } = 5 * 60;
+
+        /// <summary>
+        /// 拉取消息数量
+        /// </summary>
+        public int PrefetchCount { get; set; } = 10;
     }
 }

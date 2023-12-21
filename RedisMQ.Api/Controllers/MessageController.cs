@@ -20,12 +20,14 @@ public class MessageController : ControllerBase
     [HttpPost("PublishMessage")]
     public async Task<string> PublishMessage()
     {
-        var input = Guid.NewGuid().ToString("N");
-        var messageId = await _publisher.PublishMessageAsync("Test", new TestMessage
+        for (int i = 0; i < 10000; i++)
         {
-            Input = input
-        });
-        return $"{messageId}-{input}";
+            await _publisher.PublishMessageAsync("Test", new TestMessage
+            {
+                Input = i.ToString()
+            });
+        }
+        return "success";
     }
 
     /// <summary>

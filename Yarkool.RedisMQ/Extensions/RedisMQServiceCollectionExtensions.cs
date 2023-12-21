@@ -51,9 +51,9 @@ namespace Yarkool.RedisMQ
         /// <param name="redisClient"></param>
         /// <param name="config"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRedisMQ(this IServiceCollection services, RedisClient redisClient, Action<QueueConfig>? config = null)
+        public static IServiceCollection AddRedisMQ(this IServiceCollection services, IRedisClient redisClient, Action<QueueConfig>? config = null)
         {
-            if (!services.Any(x => x.ServiceType == typeof(RedisClient)))
+            if (!services.Any(x => x.ServiceType == typeof(IRedisClient)))
                 services.AddSingleton(redisClient);
 
             services.AddRedisMQ(config);
