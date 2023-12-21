@@ -70,7 +70,7 @@ namespace Yarkool.RedisMQ
                                     {
                                         var messageId = result.id;
                                         var messageRange = await _redisClient.XRangeAsync(queueName, messageId, messageId).ConfigureAwait(false);
-                                        if (messageRange is not { Length: > 0 }) 
+                                        if (messageRange is not { Length: > 0 })
                                             continue;
                                         var entry = messageRange[0];
                                         if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)

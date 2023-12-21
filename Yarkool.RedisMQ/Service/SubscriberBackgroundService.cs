@@ -96,7 +96,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 messageContent,
                                                 stoppingToken
                                             })!).ConfigureAwait(false);
-                                            
+
                                             //ACK
                                             await _redisClient.XAckAsync(queueName, groupName, data.id).ConfigureAwait(false);
                                             await _redisClient.XDelAsync(queueName, data.id).ConfigureAwait(false);

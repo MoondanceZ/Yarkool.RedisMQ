@@ -27,6 +27,7 @@ public class MessageController : ControllerBase
                 Input = i.ToString()
             });
         }
+
         return "success";
     }
 
