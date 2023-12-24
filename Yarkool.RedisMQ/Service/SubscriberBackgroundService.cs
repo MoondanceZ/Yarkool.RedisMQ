@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Reflection;
+using System.Text;
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -55,7 +56,9 @@ public class ConsumerBackgroundService : BackgroundService
             var isDelayQueueConsumer = consumerExecutorDescriptor.IsDelayQueueConsumer;
             var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
             var onMessageAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnMessageAsync))!;
-            var onErrorAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnErrorAsync))!;
+            var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod)!;
+            var onErrorAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnErrorAsync));
+            var onErrorAsyncMethodInvoker = onErrorAsyncMethod == null ? null : MethodInvoker.Create(onErrorAsyncMethod);
 
             if (isDelayQueueConsumer)
                 Task.Run(() => ExecuteDelayQueuePollingAsync(consumerExecutorDescriptor, stoppingToken), stoppingToken);
@@ -91,11 +94,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             messageContent = _queueConfig.Serializer.Deserialize(message.MessageContent as string, messageType);
 
                                             //Execute message
-                                            await ((Task)onMessageAsyncMethod.Invoke(consumer, new[]
-                                            {
-                                                messageContent,
-                                                stoppingToken
-                                            })!).ConfigureAwait(false);
+                                            await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
 
                                             //ACK
                                             await _redisClient.XAckAsync(queueName, groupName, data.id).ConfigureAwait(false);
@@ -111,13 +110,12 @@ public class ConsumerBackgroundService : BackgroundService
                                         {
                                             try
                                             {
-                                                var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
                                                 //Execute message
-                                                await ((Task)onErrorAsyncMethod.Invoke(consumer, new[]
+                                                if (onErrorAsyncMethodInvoker != null)
                                                 {
-                                                    messageContent,
-                                                    stoppingToken
-                                                })!).ConfigureAwait(false);
+                                                    var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
+                                                    await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
+                                                }
 
                                                 if (_queueConfig.UseErrorQueue && message != null)
                                                 {

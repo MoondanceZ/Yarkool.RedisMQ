@@ -20,7 +20,7 @@ public class MessageController : ControllerBase
     [HttpPost("PublishMessage")]
     public async Task<string> PublishMessage()
     {
-        for (int i = 0; i < 10000; i++)
+        for (int i = 0; i < 1000; i++)
         {
             await _publisher.PublishMessageAsync("Test", new TestMessage
             {
