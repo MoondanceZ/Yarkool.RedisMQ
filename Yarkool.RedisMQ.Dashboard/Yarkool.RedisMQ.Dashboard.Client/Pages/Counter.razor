@@ -8,7 +8,7 @@
 
 <MButton Color="primary" OnClick="IncrementCount">Click me</MButton>
 <MButton Color="primary" OnClick="ToHome">To Home</MButton>
-<MButton Color="primary" OnClick="ToHome">To Weather</MButton>
+<MButton Color="primary" OnClick="ToWeather">To Weather</MButton>
 
 @inject NavigationManager NavigationManager
 @code {
@@ -21,6 +21,11 @@
 
     private void ToHome()
     {
-        NavigationManager.NavigateTo("/Home");
+        NavigationManager.NavigateTo("./");
+    }
+
+    private void ToWeather()
+    {
+        NavigationManager.NavigateTo("./weather");
     }
 }
