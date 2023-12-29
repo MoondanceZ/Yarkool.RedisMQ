@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisMQ.Console", "RedisMQ.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarkool.RedisMQ", "Yarkool.RedisMQ\Yarkool.RedisMQ.csproj", "{B2A6067B-31C9-44E0-9778-B53F93A79A18}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisMQ.Api", "RedisMQ.Api\RedisMQ.Api.csproj", "{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisMQ.Api", "RedisMQ.Api\RedisMQ.Api.csproj", "{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E5CA1A80-74D5-46ED-AEDB-3EF3B9B45CD2}"
 EndProject
@@ -15,7 +15,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{7481
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{D7F379D3-E9E7-4D0B-81A7-9386654893F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarkool.RedisMQ.Test", "Yarkool.RedisMQ.Test\Yarkool.RedisMQ.Test.csproj", "{2E568015-7E22-4D4C-B1E0-4E78B3B016FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarkool.RedisMQ.Test", "Yarkool.RedisMQ.Test\Yarkool.RedisMQ.Test.csproj", "{2E568015-7E22-4D4C-B1E0-4E78B3B016FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarkool.RedisMQ.Dashboard", "Yarkool.RedisMQ.Dashboard\Yarkool.RedisMQ.Dashboard\Yarkool.RedisMQ.Dashboard.csproj", "{0E2654AA-A2A4-4FFC-944E-945BF565C9A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarkool.RedisMQ.Dashboard.Client", "Yarkool.RedisMQ.Dashboard\Yarkool.RedisMQ.Dashboard.Client\Yarkool.RedisMQ.Dashboard.Client.csproj", "{C6E34104-1621-419D-957A-EB5449072C88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,17 +43,27 @@ Global
 		{2E568015-7E22-4D4C-B1E0-4E78B3B016FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E568015-7E22-4D4C-B1E0-4E78B3B016FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E568015-7E22-4D4C-B1E0-4E78B3B016FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E2654AA-A2A4-4FFC-944E-945BF565C9A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E2654AA-A2A4-4FFC-944E-945BF565C9A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E2654AA-A2A4-4FFC-944E-945BF565C9A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E2654AA-A2A4-4FFC-944E-945BF565C9A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6E34104-1621-419D-957A-EB5449072C88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6E34104-1621-419D-957A-EB5449072C88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6E34104-1621-419D-957A-EB5449072C88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6E34104-1621-419D-957A-EB5449072C88}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {988F136D-0F74-4868-B2AE-DAE4870C249C}
-	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{B2A6067B-31C9-44E0-9778-B53F93A79A18} = {E5CA1A80-74D5-46ED-AEDB-3EF3B9B45CD2}
 		{074E1E98-96F2-4318-B820-BEE7D8848CC0} = {74810027-BC71-4DA9-A50E-4A1D705CC2BB}
+		{B2A6067B-31C9-44E0-9778-B53F93A79A18} = {E5CA1A80-74D5-46ED-AEDB-3EF3B9B45CD2}
 		{6170A4A1-BAD8-4196-BC1D-2E5A9D914DED} = {74810027-BC71-4DA9-A50E-4A1D705CC2BB}
 		{2E568015-7E22-4D4C-B1E0-4E78B3B016FB} = {D7F379D3-E9E7-4D0B-81A7-9386654893F2}
+		{0E2654AA-A2A4-4FFC-944E-945BF565C9A3} = {E5CA1A80-74D5-46ED-AEDB-3EF3B9B45CD2}
+		{C6E34104-1621-419D-957A-EB5449072C88} = {E5CA1A80-74D5-46ED-AEDB-3EF3B9B45CD2}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {988F136D-0F74-4868-B2AE-DAE4870C249C}
 	EndGlobalSection
 EndGlobal
