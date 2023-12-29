@@ -23,7 +23,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:48710",
+      "applicationUrl": "http://localhost:48710/redis-mq",
       "sslPort": 0
     }
   }
