@@ -7,12 +7,20 @@
 <p role="status">Current count: @currentCount</p>
 
 <MButton Color="primary" OnClick="IncrementCount">Click me</MButton>
+<MButton Color="primary" OnClick="ToHome">To Home</MButton>
+<MButton Color="primary" OnClick="ToHome">To Weather</MButton>
 
+@inject NavigationManager NavigationManager
 @code {
     private int currentCount = 0;
 
     private void IncrementCount()
     {
         currentCount++;
+    }
+
+    private void ToHome()
+    {
+        NavigationManager.NavigateTo("/Home");
     }
 }
