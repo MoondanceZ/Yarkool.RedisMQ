@@ -18,8 +18,6 @@ var app = builder.Build();
 
 var pathPrefix = "/redis-mq";
 
-GlobalData.PathPrefix = $"{pathPrefix}/";
-
 app.Map(pathPrefix, subApp =>
 {
     //https://learn.microsoft.com/zh-cn/aspnet/core/blazor/host-and-deploy/?view=aspnetcore-8.0&tabs=visual-studio#app-base-path

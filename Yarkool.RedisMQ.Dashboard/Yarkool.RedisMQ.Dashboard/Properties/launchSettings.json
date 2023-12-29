@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/redis-mq/_framework/debug/ws-proxy?browser={browserInspectUri}",
       "applicationUrl": "http://localhost:5080"
     },
     "IIS Express": {
@@ -15,7 +15,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}"
+      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/redis-mq/_framework/debug/ws-proxy?browser={browserInspectUri}"
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json",
@@ -23,7 +23,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:48710/redis-mq",
+      "applicationUrl": "http://localhost:48710",
       "sslPort": 0
     }
   }
