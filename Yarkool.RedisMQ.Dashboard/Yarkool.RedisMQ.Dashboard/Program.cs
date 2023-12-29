@@ -1,6 +1,7 @@
 using System.Diagnostics.Metrics;
 using BlazorComponent;
 using Microsoft.AspNetCore.Builder;
+using Yarkool.RedisMQ.Dashboard;
 using Yarkool.RedisMQ.Dashboard.Client.Pages;
 using Yarkool.RedisMQ.Dashboard.Components;
 
@@ -15,8 +16,9 @@ builder.Services.AddMasaBlazor();
 
 var app = builder.Build();
 
-var pathPrefix = "/RedisMQ";
+var pathPrefix = "/redis-mq";
 
+GlobalData.PathPrefix = $"{pathPrefix}/";
 
 app.Map(pathPrefix, subApp =>
 {
