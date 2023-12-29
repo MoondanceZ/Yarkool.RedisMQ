@@ -44,4 +44,8 @@
         <None Include="../README.md" Pack="true" PackagePath="/"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Yarkool.RedisMQ.Dashboard\Yarkool.RedisMQ.Dashboard\Yarkool.RedisMQ.Dashboard.csproj" />
+    </ItemGroup>
+
 </Project>

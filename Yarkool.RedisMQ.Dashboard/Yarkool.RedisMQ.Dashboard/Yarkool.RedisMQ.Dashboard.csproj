@@ -4,12 +4,23 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
-
 
   <ItemGroup>
     <ProjectReference Include="..\Yarkool.RedisMQ.Dashboard.Client\Yarkool.RedisMQ.Dashboard.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\css\app.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\materialdesign\v7.1.96\css\materialdesignicons.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\materialdesign\v7.1.96\css\materialdesignicons.min.css.map" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\materialdesign\v7.1.96\fonts\materialdesignicons-webfont.eot" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\materialdesign\v7.1.96\fonts\materialdesignicons-webfont.ttf" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\materialdesign\v7.1.96\fonts\materialdesignicons-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\css\materialdesign\v7.1.96\fonts\materialdesignicons-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\favicon.png" />
   </ItemGroup>
 
 </Project>

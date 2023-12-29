@@ -1,6 +1,11 @@
 ﻿using FreeRedis;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Yarkool.RedisMQ.Dashboard.Client.Pages;
+using Yarkool.RedisMQ.Dashboard.Components;
 
 namespace Yarkool.RedisMQ
 {
@@ -36,6 +41,15 @@ namespace Yarkool.RedisMQ
                 services.AddHostedService<ConsumerBackgroundService>();
                 if (queueConfig.RepublishNonAckTimeOutMessage)
                     services.AddHostedService<HandlePendingTimeOutService>();
+            }
+
+            if (queueConfig.UseDashboard)
+            {
+                services.AddRazorComponents()
+                    .AddInteractiveServerComponents()
+                    .AddInteractiveWebAssemblyComponents();
+
+                services.AddMasaBlazor();
             }
 
             var serviceProvider = services.BuildServiceProvider();
@@ -106,6 +120,48 @@ namespace Yarkool.RedisMQ
             });
 
             return services;
+        }
+        
+        public static IApplicationBuilder UseRedisMQDashboard(this IApplicationBuilder app)
+        {
+            ArgumentNullException.ThrowIfNull(app);
+            
+            var pathPrefix = "/redis-mq";
+
+            app.Map(pathPrefix, subApp =>
+            {
+                //https://learn.microsoft.com/zh-cn/aspnet/core/blazor/host-and-deploy/?view=aspnetcore-8.0&tabs=visual-studio#app-base-path
+                //https://learn.microsoft.com/zh-cn/aspnet/core/blazor/host-and-deploy/multiple-hosted-webassembly?view=aspnetcore-7.0&source=recommendations&pivots=port-domain
+                //https://learn.microsoft.com/zh-cn/aspnet/core/fundamentals/routing?view=aspnetcore-8.0
+                //均可以单独配置
+                // Configure the HTTP request pipeline.
+                var webApplication = app as WebApplication;
+                if (webApplication?.Environment.IsDevelopment() == true)
+                {
+                    subApp.UseWebAssemblyDebugging();
+                }
+                else
+                {
+                    subApp.UseExceptionHandler("/Error", createScopeForErrors: true);
+                }
+
+                subApp.UsePathBase(pathPrefix);
+                subApp.UseRouting();
+                subApp.UseStaticFiles();
+                subApp.UseBlazorFrameworkFiles();
+                subApp.UseAntiforgery();
+
+                subApp.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapBlazorHub(pathPrefix);
+                    endpoints.MapRazorComponents<App>()
+                        .AddInteractiveServerRenderMode()
+                        .AddInteractiveWebAssemblyRenderMode(options => options.PathPrefix = pathPrefix)
+                        .AddAdditionalAssemblies(typeof(Counter).Assembly);
+                });
+            });
+
+            return app;
         }
     }
 }

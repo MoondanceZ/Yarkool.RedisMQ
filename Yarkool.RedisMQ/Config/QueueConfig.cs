@@ -26,6 +26,11 @@
         public bool UseErrorQueue { get; set; }
 
         /// <summary>
+        /// 使用数据面板
+        /// </summary>
+        public bool UseDashboard { get; set; }
+
+        /// <summary>
         /// Redis缓存前缀
         /// </summary>
         public string? RedisPrefix { get; set; }

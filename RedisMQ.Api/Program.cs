@@ -14,6 +14,7 @@ builder.Services.AddRedisMQ(cli, config =>
     config.RedisPrefix = "RedisMQ:";
     config.RegisterConsumerService = true;
     config.RepublishNonAckTimeOutMessage = true;
+    config.UseDashboard = true;
 });
 
 var app = builder.Build();
@@ -23,6 +24,8 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseRedisMQDashboard();
 
 app.MapControllers();
 
