@@ -30,10 +30,7 @@ public class Tests
         var publisher = _serviceProvider.GetService<IRedisMQPublisher>();
         for (int i = 0; i < 10000; i++)
         {
-            await publisher.PublishMessageAsync("Test", new TestMessage
-            {
-                Input = i.ToString()
-            });
+            await publisher.PublishMessageAsync("Test", new TestMessage { Input = i.ToString() });
         }
 
         Assert.Pass();

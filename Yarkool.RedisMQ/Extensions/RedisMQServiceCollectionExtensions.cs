@@ -96,14 +96,8 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddHostedService(this IServiceCollection services, Type type)
         {
             var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethod(nameof(ServiceCollectionHostedServiceExtensions.AddHostedService),
-                new[]
-                {
-                    typeof(IServiceCollection)
-                })?.MakeGenericMethod(type);
-            method?.Invoke(null, new object[]
-            {
-                services
-            });
+                new[] { typeof(IServiceCollection) })?.MakeGenericMethod(type);
+            method?.Invoke(null, new object[] { services });
 
             return services;
         }

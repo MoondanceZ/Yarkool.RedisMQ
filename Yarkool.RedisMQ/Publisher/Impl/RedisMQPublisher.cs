@@ -20,10 +20,7 @@ namespace Yarkool.RedisMQ
                 throw new RedisMQException("queue name cannot be null!");
 
             queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
-            var baseMessage = new BaseMessage
-            {
-                MessageContent = message
-            };
+            var baseMessage = new BaseMessage { MessageContent = message };
             var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
             await redisClient.XAddAsync(queueName, data);
 

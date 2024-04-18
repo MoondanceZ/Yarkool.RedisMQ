@@ -14,6 +14,7 @@ builder.Services.AddRedisMQ(cli, config =>
     config.RedisPrefix = "RedisMQ:";
     config.RegisterConsumerService = true;
     config.RepublishNonAckTimeOutMessage = true;
+    // config.Serializer = new RedisMQ.Api.NewtonsoftJsonSerializer();
 });
 
 var app = builder.Build();

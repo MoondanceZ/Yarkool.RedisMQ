@@ -73,7 +73,8 @@ namespace Yarkool.RedisMQ
                                         if (messageRange is not { Length: > 0 })
                                             continue;
                                         var entry = messageRange[0];
-                                        if (MapToClass(entry.fieldValues, typeof(BaseMessage), Encoding.UTF8) is BaseMessage message)
+                                        var message = entry.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
+                                        if (message != null)
                                         {
                                             // 再判一次是否超时
                                             var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > pendingTimeOut;
@@ -114,16 +115,6 @@ namespace Yarkool.RedisMQ
             }
 
             return Task.CompletedTask;
-        }
-
-        private object? MapToClass(object[] list, Type type, Encoding encoding)
-        {
-            var method = typeof(RespHelper).GetMethod(nameof(RespHelper.MapToClass))?.MakeGenericMethod(type);
-            return method?.Invoke(null, new object[]
-            {
-                list,
-                encoding
-            });
         }
     }
 }

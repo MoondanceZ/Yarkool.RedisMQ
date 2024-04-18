@@ -24,7 +24,8 @@ public class MessageController : ControllerBase
         {
             await _publisher.PublishMessageAsync("Test", new TestMessage
             {
-                Input = i.ToString()
+                Input = i.ToString(),
+                MessageBody = new TestMessage.TestMessageBody()
             });
         }
 
@@ -41,7 +42,8 @@ public class MessageController : ControllerBase
         var input = Guid.NewGuid().ToString("N");
         var messageId = await _publisher.PublishMessageAsync("Delay", new TestMessage
         {
-            Input = input
+            Input = input,
+            MessageBody = new TestMessage.TestMessageBody()
         }, TimeSpan.FromSeconds(10));
         return $"{messageId}-{input}";
     }
