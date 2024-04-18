@@ -7,6 +7,7 @@
 在 `Program.cs`中注册
 
 ```csharp
+var cli = new RedisClient("127.0.0.1:6379,password=");
 services.AddRedisMQ(cli, config =>
 {
     config.UseErrorQueue = true;  //是否在消费错误时, 消息推送到错误队列
