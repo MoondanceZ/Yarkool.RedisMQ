@@ -3,7 +3,7 @@
 namespace RedisMQ.Console
 {
     [RedisMQConsumer("Test")]
-    internal class TestRedisMqConsumer : IRedisMQConsumer<TestMessage>
+    internal class TestRedisMQConsumer : IRedisMQConsumer<TestMessage>
     {
         public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
         {

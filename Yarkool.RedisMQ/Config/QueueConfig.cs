@@ -6,7 +6,7 @@
     public class QueueConfig
     {
         /// <summary>
-        /// MessageStorageTime, seconde
+        /// MessageStorageTime, second
         /// </summary>
         public int MessageStorageTime { get; set; } = (int)TimeSpan.FromDays(7).TotalSeconds;
 

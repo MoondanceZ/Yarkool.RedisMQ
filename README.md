@@ -21,7 +21,7 @@ services.AddRedisMQ(cli, config =>
 
 ```csharp
 [RedisMQConsumer("Test")]
-public class TestRedisMqConsumer : IRedisMQConsumer<TestMessage>
+public class TestRedisMQConsumer : IRedisMQConsumer<TestMessage>
 {
     public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
     {
