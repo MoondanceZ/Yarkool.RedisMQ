@@ -1,4 +1,5 @@
-﻿using FreeRedis;
+﻿using System.Collections.Concurrent;
+using FreeRedis;
 
 namespace Yarkool.RedisMQ
 {
@@ -8,6 +9,9 @@ namespace Yarkool.RedisMQ
         IRedisClient redisClient
     ) : IRedisMQPublisher
     {
+        private static readonly object _lock = new();
+        private static readonly List<double> _delaySecondsList = new();
+
         /// <summary>
         /// publish message
         /// </summary>
@@ -46,7 +50,15 @@ namespace Yarkool.RedisMQ
             var score = TimeHelper.GetMillisecondTimestamp() + delaySeconds * 1000;
             var delayTimeSortedSetName = $"{queueName}:DelayTimeType";
             var delayQueueName = $"{delayTimeSortedSetName}:{delaySeconds}";
-            await redisClient.SAddAsync(delayTimeSortedSetName, delaySeconds);
+
+            lock (_lock)
+            {
+                if (!_delaySecondsList.Contains(delaySeconds))
+                {
+                    redisClient.SAdd(delayTimeSortedSetName, delaySeconds);
+                    _delaySecondsList.Add(delaySeconds);
+                }
+            }
 
             var baseMessage = new BaseMessage
             {
