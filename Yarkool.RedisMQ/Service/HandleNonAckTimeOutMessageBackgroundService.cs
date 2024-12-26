@@ -13,15 +13,13 @@ namespace Yarkool.RedisMQ
         private readonly ConsumerServiceSelector _consumerServiceSelector;
         private readonly QueueConfig _queueConfig;
         private readonly IRedisClient _redisClient;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<HandlePendingTimeOutService> _logger;
 
-        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, IRedisClient redisClient, IServiceProvider serviceProvider, ILogger<HandlePendingTimeOutService> logger)
+        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, IRedisClient redisClient, ILogger<HandlePendingTimeOutService> logger)
         {
             _consumerServiceSelector = consumerServiceSelector;
             _queueConfig = queueConfig;
             _redisClient = redisClient;
-            _serviceProvider = serviceProvider;
             _logger = logger;
 
             foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
