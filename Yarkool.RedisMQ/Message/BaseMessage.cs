@@ -10,7 +10,7 @@
         /// <summary>
         /// 消息内容
         /// </summary>
-        public object? MessageContent { get; set; }
+        public string? MessageContent { get; set; }
 
         /// <summary>
         /// 机器名称

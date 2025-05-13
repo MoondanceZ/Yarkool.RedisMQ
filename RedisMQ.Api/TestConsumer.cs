@@ -5,10 +5,10 @@ namespace RedisMQ.Api
     [RedisMQConsumer("Test", ConsumerCount = 1, PendingTimeOut = 10, PrefetchCount = 100)]
     public class TestConsumer : IRedisMQConsumer<TestMessage>
     {
-        public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
+        public async Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
         {
             Console.WriteLine(message.Input);
-            return Task.CompletedTask;
+            await Task.Delay(10, cancellationToken);
         }
     }
 }

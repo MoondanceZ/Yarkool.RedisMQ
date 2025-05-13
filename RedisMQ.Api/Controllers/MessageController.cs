@@ -18,11 +18,11 @@ public class MessageController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost("PublishMessage")]
-    public async Task<string> PublishMessage()
+    public string PublishMessage()
     {
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < 200; i++)
         {
-            await _publisher.PublishMessageAsync("Test", new TestMessage
+            _ = _publisher.PublishMessageAsync("Test", new TestMessage
             {
                 Input = i.ToString(),
                 MessageBody = new TestMessage.TestMessageBody()

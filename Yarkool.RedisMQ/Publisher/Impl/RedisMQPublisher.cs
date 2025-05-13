@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using FreeRedis;
+﻿using FreeRedis;
 
 namespace Yarkool.RedisMQ
 {
@@ -24,7 +23,7 @@ namespace Yarkool.RedisMQ
                 throw new RedisMQException("queue name cannot be null!");
 
             queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
-            var baseMessage = new BaseMessage { MessageContent = message };
+            var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
             var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
             await redisClient.XAddAsync(queueName, data);
 
@@ -62,7 +61,7 @@ namespace Yarkool.RedisMQ
 
             var baseMessage = new BaseMessage
             {
-                MessageContent = message,
+                MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message),
                 DelayTime = delaySeconds
             };
 

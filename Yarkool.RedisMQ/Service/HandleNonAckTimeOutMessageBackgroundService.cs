@@ -80,11 +80,15 @@ namespace Yarkool.RedisMQ
                                             {
                                                 message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
                                                 var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
-                                                await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
-                                            }
 
-                                            await _redisClient.XAckAsync(queueName, groupName, entry.id).ConfigureAwait(false);
-                                            await _redisClient.XDelAsync(queueName, entry.id).ConfigureAwait(false);
+                                                using var tran = _redisClient.Multi();
+                                                _redisClient.XAck(queueName, groupName, entry.id);
+                                                _redisClient.XDel(queueName, entry.id);
+                                                tran.XAdd(queueName, data);
+                                                tran.Exec();
+
+                                                _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
+                                            }
                                         }
                                         else
                                         {
@@ -92,8 +96,10 @@ namespace Yarkool.RedisMQ
                                             var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > pendingTimeOut;
                                             if (isTimeOutMessage)
                                             {
-                                                await _redisClient.XAckAsync(queueName, groupName, entry.id).ConfigureAwait(false);
-                                                await _redisClient.XDelAsync(queueName, entry.id).ConfigureAwait(false);
+                                                using var tran = _redisClient.Multi();
+                                                _redisClient.XAck(queueName, groupName, entry.id);
+                                                _redisClient.XDel(queueName, entry.id);
+                                                tran.Exec();
                                             }
                                         }
                                     }

@@ -90,21 +90,24 @@ public class ConsumerBackgroundService : BackgroundService
                                             var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
                                             message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
 
-                                            //_logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
-                                            messageContent = _queueConfig.Serializer.Deserialize(message.MessageContent as string, messageType);
+                                            // _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
+                                            messageContent = string.IsNullOrEmpty(message.MessageContent) ? null : _queueConfig.Serializer.Deserialize(message.MessageContent, messageType);
 
                                             //Execute message
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
 
-                                            //ACK
-                                            await _redisClient.XAckAsync(queueName, groupName, data.id).ConfigureAwait(false);
-                                            await _redisClient.XDelAsync(queueName, data.id).ConfigureAwait(false);
+                                            //ACK use tran
+                                            using var tran = _redisClient.Multi();
+                                            tran.XAck(queueName, groupName, data.id);
+                                            tran.XDel(queueName, data.id);
 
                                             if (isDelayQueueConsumer)
                                             {
                                                 var messageIdHSetName = $"{queueName}:MessageId";
-                                                await _redisClient.HDelAsync(messageIdHSetName, message.MessageId).ConfigureAwait(false);
+                                                tran.HDel(messageIdHSetName, message.MessageId);
                                             }
+
+                                            tran.Exec();
                                         }
                                         catch (Exception ex)
                                         {
