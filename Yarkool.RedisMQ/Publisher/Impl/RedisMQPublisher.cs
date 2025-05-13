@@ -65,14 +65,6 @@ namespace Yarkool.RedisMQ
                 DelayTime = delaySeconds
             };
 
-            var messageIdHSetName = $"{queueName}:MessageId";
-            await redisClient.HSetAsync(messageIdHSetName, baseMessage.MessageId, new MessageModel
-            {
-                QueueName = queueName,
-                DelayQueueName = delayQueueName,
-                Status = MessageStatus.Pending,
-                Message = baseMessage
-            });
             await redisClient.ZAddAsync(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
 
             return baseMessage.MessageId;

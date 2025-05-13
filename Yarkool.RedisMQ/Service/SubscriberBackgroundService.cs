@@ -195,16 +195,7 @@ public class ConsumerBackgroundService : BackgroundService
                         continue;
 
                     var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(baseMessage));
-                    var queueMessageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
-                    var messageIdHSetName = $"{queueName}:MessageId";
-                    await _redisClient.HSetAsync(messageIdHSetName, baseMessage.MessageId, new MessageModel
-                    {
-                        QueueName = queueName,
-                        DelayQueueName = item.DelayQueueName,
-                        Status = MessageStatus.Processing,
-                        Message = baseMessage,
-                        QueueMessageId = queueMessageId // use to delete message
-                    }).ConfigureAwait(false);
+                    var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
                     await _redisClient.ZRemAsync(item.DelayQueueName, item.Member).ConfigureAwait(false);
                 }
             }
