@@ -108,6 +108,8 @@ public class ConsumerBackgroundService : BackgroundService
                                             }
 
                                             tran.Exec();
+
+                                            // _logger?.LogInformation($"{consumerName}_{consumerIndex} consume {message.MessageContent} successfully");
                                         }
                                         catch (Exception ex)
                                         {
@@ -117,7 +119,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 if (onErrorAsyncMethodInvoker != null)
                                                 {
                                                     var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
-                                                    await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
+                                                    await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, ex, stoppingToken)!).ConfigureAwait(false);
                                                 }
 
                                                 if (_queueConfig.UseErrorQueue && message != null)
