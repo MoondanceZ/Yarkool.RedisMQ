@@ -56,9 +56,9 @@ public class ConsumerBackgroundService : BackgroundService
             var isDelayQueueConsumer = consumerExecutorDescriptor.IsDelayQueueConsumer;
             var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
             var isAutoAck = consumerExecutorDescriptor.IsAutoAck;
-            var onMessageAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnMessageAsync))!;
+            var onMessageAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnMessageAsync))!;
             var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod)!;
-            var onErrorAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnErrorAsync));
+            var onErrorAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnErrorAsync));
             var onErrorAsyncMethodInvoker = onErrorAsyncMethod == null ? null : MethodInvoker.Create(onErrorAsyncMethod);
 
             if (isDelayQueueConsumer)
@@ -95,7 +95,12 @@ public class ConsumerBackgroundService : BackgroundService
                                             messageContent = string.IsNullOrEmpty(message.MessageContent) ? null : _queueConfig.Serializer.Deserialize(message.MessageContent, messageType);
 
                                             //Execute message
-                                            await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
+                                            if (onMessageAsyncMethod?.GetParameters().Length == 2)
+                                                await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
+                                            else if (onErrorAsyncMethod?.GetParameters().Length == 3)
+                                                await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, new ConsumerReceivedDescriptor(queueName, groupName, message.MessageId, _redisClient), stoppingToken)!).ConfigureAwait(false);
+                                            else
+                                                throw new InvalidOperationException($"Unknown consumer type: {consumerType.FullName}");
 
                                             if (isAutoAck)
                                             {
@@ -104,13 +109,6 @@ public class ConsumerBackgroundService : BackgroundService
                                                 tran.XAck(queueName, groupName, data.id);
                                                 tran.XDel(queueName, data.id);
                                                 tran.HDel(Constants.MessageIdMapping, message.MessageId);
-
-                                                if (isDelayQueueConsumer)
-                                                {
-                                                    var messageIdHSetName = $"{queueName}:MessageId";
-                                                    tran.HDel(messageIdHSetName, message.MessageId);
-                                                }
-
                                                 tran.Exec();
                                             }
 
@@ -201,8 +199,11 @@ public class ConsumerBackgroundService : BackgroundService
 
                     var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(baseMessage));
                     var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
-                    await _redisClient.HSetAsync(Constants.MessageIdMapping, baseMessage.MessageId, messageId).ConfigureAwait(false);
-                    await _redisClient.ZRemAsync(item.DelayQueueName, item.Member).ConfigureAwait(false);
+
+                    using var tran = _redisClient.Multi();
+                    _redisClient.HSet(Constants.MessageIdMapping, baseMessage.MessageId, messageId);
+                    _redisClient.ZRem(item.DelayQueueName, item.Member);
+                    tran.Exec();
                 }
             }
             else

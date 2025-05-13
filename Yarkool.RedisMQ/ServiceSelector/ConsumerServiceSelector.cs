@@ -12,12 +12,12 @@ public class ConsumerServiceSelector
 
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
         var consumerTypes = assemblies.SelectMany(x => x.GetTypes())
-            .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRedisMQConsumer<>)))
+            .Where(t => t is { IsAbstract: false, IsClass: true, BaseType.IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == typeof(RedisMQConsumer<>))
             .ToList();
 
         foreach (var consumerType in consumerTypes)
         {
-            var interfaceType = consumerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRedisMQConsumer<>))!;
+            var messageTypeInfo = consumerType.BaseType!.GetGenericArguments()[0].GetTypeInfo();
             var queueConsumerAttribute = consumerType.GetCustomAttributes(typeof(RedisMQConsumerAttribute), false).FirstOrDefault() as RedisMQConsumerAttribute;
             if (queueConsumerAttribute == null)
                 throw new RedisMQException($"{consumerType.Name} doesn't have a `RedisMQConsumerAttribute`!");
@@ -33,7 +33,7 @@ public class ConsumerServiceSelector
             _cacheList.Add(new ConsumerExecutorDescriptor
             {
                 ConsumerTypeInfo = consumerType.GetTypeInfo(),
-                MessageTypeInfo = interfaceType.GetGenericArguments()[0].GetTypeInfo(),
+                MessageTypeInfo = messageTypeInfo,
                 QueueName = queueName,
                 GroupName = groupName,
                 IsDelayQueueConsumer = queueConsumerAttribute.IsDelayQueueConsumer,

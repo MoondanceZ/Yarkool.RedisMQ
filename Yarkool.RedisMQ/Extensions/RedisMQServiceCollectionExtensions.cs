@@ -82,7 +82,7 @@ namespace Yarkool.RedisMQ
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             var consumerTypes = assemblies.SelectMany(x => x.GetTypes())
-                .Where(t => t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRedisMQConsumer<>)))
+                .Where(t => t is { IsAbstract: false, IsClass: true, BaseType.IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == typeof(RedisMQConsumer<>))
                 .ToList();
 
             foreach (var item in consumerTypes)
@@ -96,8 +96,8 @@ namespace Yarkool.RedisMQ
         private static IServiceCollection AddHostedService(this IServiceCollection services, Type type)
         {
             var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethod(nameof(ServiceCollectionHostedServiceExtensions.AddHostedService),
-                new[] { typeof(IServiceCollection) })?.MakeGenericMethod(type);
-            method?.Invoke(null, new object[] { services });
+                [typeof(IServiceCollection)])?.MakeGenericMethod(type);
+            method?.Invoke(null, [services]);
 
             return services;
         }

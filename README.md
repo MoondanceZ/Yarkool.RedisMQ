@@ -21,7 +21,7 @@ services.AddRedisMQ(cli, config =>
 
 ```csharp
 [RedisMQConsumer("Test")]
-public class TestRedisMQConsumer : IRedisMQConsumer<TestMessage>
+public class TestRedisMQConsumer : RedisMQConsumer<TestMessage>
 {
     public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
     {
@@ -32,7 +32,7 @@ public class TestRedisMQConsumer : IRedisMQConsumer<TestMessage>
 }
 
 [RedisMQConsumer("Delay", ConsumerCount = 1, PendingTimeOut = 10, IsDelayQueueConsumer = true)]
-public class DelayConsumer(ILogger<DelayConsumer> logger) : IRedisMQConsumer<TestMessage>
+public class DelayConsumer(ILogger<DelayConsumer> logger) : RedisMQConsumer<TestMessage>
 {
     public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
     {
