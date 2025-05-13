@@ -55,6 +55,7 @@ public class ConsumerBackgroundService : BackgroundService
             var consumerName = $"{consumerExecutorDescriptor.QueueName}_Consumer";
             var isDelayQueueConsumer = consumerExecutorDescriptor.IsDelayQueueConsumer;
             var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
+            var isAutoAck = consumerExecutorDescriptor.IsAutoAck;
             var onMessageAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnMessageAsync))!;
             var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod)!;
             var onErrorAsyncMethod = consumerType.GetMethod(nameof(IRedisMQConsumer<object>.OnErrorAsync));
@@ -96,18 +97,22 @@ public class ConsumerBackgroundService : BackgroundService
                                             //Execute message
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
 
-                                            //ACK use tran
-                                            using var tran = _redisClient.Multi();
-                                            tran.XAck(queueName, groupName, data.id);
-                                            tran.XDel(queueName, data.id);
-
-                                            if (isDelayQueueConsumer)
+                                            if (isAutoAck)
                                             {
-                                                var messageIdHSetName = $"{queueName}:MessageId";
-                                                tran.HDel(messageIdHSetName, message.MessageId);
-                                            }
+                                                //ACK use tran
+                                                using var tran = _redisClient.Multi();
+                                                tran.XAck(queueName, groupName, data.id);
+                                                tran.XDel(queueName, data.id);
+                                                tran.HDel(Constants.MessageIdMapping, message.MessageId);
 
-                                            tran.Exec();
+                                                if (isDelayQueueConsumer)
+                                                {
+                                                    var messageIdHSetName = $"{queueName}:MessageId";
+                                                    tran.HDel(messageIdHSetName, message.MessageId);
+                                                }
+
+                                                tran.Exec();
+                                            }
 
                                             // _logger?.LogInformation($"{consumerName}_{consumerIndex} consume {message.MessageContent} successfully");
                                         }

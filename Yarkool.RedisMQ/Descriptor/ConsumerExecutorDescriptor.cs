@@ -30,6 +30,11 @@ public class ConsumerExecutorDescriptor
     public int PrefetchCount { get; set; } = 10;
 
     /// <summary>
+    /// 是否自动 Ack
+    /// </summary>
+    public bool IsAutoAck { get; set; } = true;
+
+    /// <summary>
     /// RedisMQConsumerAttribute
     /// </summary>
     public RedisMQConsumerAttribute RedisMQConsumerAttribute { get; set; } = default!;

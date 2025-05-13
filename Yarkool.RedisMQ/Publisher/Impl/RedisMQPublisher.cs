@@ -25,7 +25,8 @@ namespace Yarkool.RedisMQ
             queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
             var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
             var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
-            await redisClient.XAddAsync(queueName, data);
+            var messageId = await redisClient.XAddAsync(queueName, data);
+            await redisClient.HSetAsync(Constants.MessageIdMapping, baseMessage.MessageId, messageId);
 
             return baseMessage.MessageId;
         }

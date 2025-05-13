@@ -39,7 +39,8 @@ public class ConsumerServiceSelector
                 IsDelayQueueConsumer = queueConsumerAttribute.IsDelayQueueConsumer,
                 PendingTimeOut = queueConsumerAttribute.PendingTimeOut,
                 RedisMQConsumerAttribute = queueConsumerAttribute,
-                PrefetchCount = queueConsumerAttribute.PrefetchCount
+                PrefetchCount = queueConsumerAttribute.PrefetchCount,
+                IsAutoAck = queueConsumerAttribute.IsAutoAck
             });
         }
     }

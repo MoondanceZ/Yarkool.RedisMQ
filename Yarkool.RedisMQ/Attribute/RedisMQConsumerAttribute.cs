@@ -27,5 +27,10 @@
         /// 拉取消息数量
         /// </summary>
         public int PrefetchCount { get; set; } = 10;
+
+        /// <summary>
+        /// 是否自动 Ack
+        /// </summary>
+        public bool IsAutoAck { get; set; } = true;
     }
 }
