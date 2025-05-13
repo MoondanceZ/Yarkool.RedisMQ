@@ -14,9 +14,10 @@ public interface IRedisMQConsumer<in TMessage>
     /// On Error
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="ex"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task OnErrorAsync(TMessage message, CancellationToken cancellationToken = default)
+    Task OnErrorAsync(TMessage message, Exception ex, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
