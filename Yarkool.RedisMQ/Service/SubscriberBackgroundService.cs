@@ -201,6 +201,7 @@ public class ConsumerBackgroundService : BackgroundService
 
                     var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(baseMessage));
                     var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
+                    await _redisClient.HSetAsync(Constants.MessageIdMapping, baseMessage.MessageId, messageId).ConfigureAwait(false);
                     await _redisClient.ZRemAsync(item.DelayQueueName, item.Member).ConfigureAwait(false);
                 }
             }
