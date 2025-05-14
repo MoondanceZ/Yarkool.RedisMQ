@@ -6,11 +6,6 @@
     public class QueueConfig
     {
         /// <summary>
-        /// MessageStorageTime, second
-        /// </summary>
-        public int MessageStorageTime { get; set; } = (int)TimeSpan.FromDays(7).TotalSeconds;
-
-        /// <summary>
         /// 注册消费者服务
         /// </summary>
         public bool RegisterConsumerService { get; set; }
@@ -22,6 +17,7 @@
 
         /// <summary>
         /// 使用失败队列
+        /// <para>消费失败时, 消息会流转到失败队列, 原队列的消息将会被删除</para>
         /// </summary>
         public bool UseErrorQueue { get; set; }
 
