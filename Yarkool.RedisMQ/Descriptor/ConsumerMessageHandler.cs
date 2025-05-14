@@ -31,4 +31,35 @@ public class ConsumerMessageHandler
             tran.Exec();
         }
     }
+
+    /// <summary>
+    /// Ack multiple message
+    /// </summary>
+    /// <returns></returns>
+    public async Task AckAsync(IEnumerable<string> messageIds, CancellationToken cancellationToken = default)
+    {
+        if (!messageIds.Any())
+            return;
+        var streamMessageIdDic = new Dictionary<string, string>();
+        foreach (var id in messageIds)
+        {
+            if (string.IsNullOrEmpty(id))
+                continue;
+            var streamMessageId = await redisClient.HGetAsync(Constants.MessageIdMapping, id).ConfigureAwait(false);
+            streamMessageIdDic.Add(id, streamMessageId);
+        }
+
+        if (streamMessageIdDic.Any())
+        {
+            using var tran = redisClient!.Multi();
+            foreach (var item in streamMessageIdDic)
+            {
+                tran.XAck(queueName, groupName, item.Value);
+                tran.XDel(queueName, item.Value);
+                tran.HDel(Constants.MessageIdMapping, item.Key);
+            }
+
+            tran.Exec();
+        }
+    }
 }
