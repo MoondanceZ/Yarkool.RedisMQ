@@ -86,21 +86,18 @@ public class ConsumerBackgroundService : BackgroundService
                                 {
                                     foreach (var data in entryResultEntries)
                                     {
+                                        var messageHandler = new ConsumerMessageHandler(queueName, groupName, _redisClient);
                                         try
                                         {
                                             var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
                                             message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
+                                            messageHandler.MessageId = message.MessageId;
 
                                             // _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
                                             messageContent = string.IsNullOrEmpty(message.MessageContent) ? null : _queueConfig.Serializer.Deserialize(message.MessageContent, messageType);
 
                                             //Execute message
-                                            if (onMessageAsyncMethod?.GetParameters().Length == 2)
-                                                await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, stoppingToken)!).ConfigureAwait(false);
-                                            else if (onErrorAsyncMethod?.GetParameters().Length == 3)
-                                                await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, new ConsumerReceivedDescriptor(queueName, groupName, message.MessageId, _redisClient), stoppingToken)!).ConfigureAwait(false);
-                                            else
-                                                throw new InvalidOperationException($"Unknown consumer type: {consumerType.FullName}");
+                                            await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
 
                                             if (isAutoAck)
                                             {
@@ -122,7 +119,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 if (onErrorAsyncMethodInvoker != null)
                                                 {
                                                     var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
-                                                    await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, ex, stoppingToken)!).ConfigureAwait(false);
+                                                    await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, ex, stoppingToken)!).ConfigureAwait(false);
                                                 }
 
                                                 if (_queueConfig.UseErrorQueue && message != null)

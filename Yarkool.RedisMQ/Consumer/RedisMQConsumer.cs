@@ -1,6 +1,4 @@
-﻿using FreeRedis;
-
-namespace Yarkool.RedisMQ;
+﻿namespace Yarkool.RedisMQ;
 
 public abstract class RedisMQConsumer<TMessage>
 {
@@ -8,33 +6,20 @@ public abstract class RedisMQConsumer<TMessage>
     /// On Message
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="messageHandler"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public virtual Task OnMessageAsync(TMessage message, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// On Message
-    /// </summary>
-    /// <param name="message"></param>
-    /// <param name="consumerReceivedDescriptor"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public virtual Task OnMessageAsync(TMessage message, ConsumerReceivedDescriptor consumerReceivedDescriptor, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+    public abstract Task OnMessageAsync(TMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// On Error
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="messageHandler"></param>
     /// <param name="ex"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public virtual Task OnErrorAsync(TMessage message, Exception ex, CancellationToken cancellationToken = default)
+    public virtual Task OnErrorAsync(TMessage message, ConsumerMessageHandler messageHandler, Exception ex, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }

@@ -5,7 +5,7 @@ namespace RedisMQ.Console
     [RedisMQConsumer("Test")]
     internal class TestRedisMQConsumer : RedisMQConsumer<TestMessage>
     {
-        public override Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
+        public override Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)
         {
             System.Console.WriteLine(message.Input);
 
