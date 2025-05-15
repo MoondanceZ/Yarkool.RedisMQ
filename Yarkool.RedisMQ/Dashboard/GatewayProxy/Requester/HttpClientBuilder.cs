@@ -1,0 +1,49 @@
+﻿namespace Yarkool.RedisMQ;
+
+internal class HttpClientBuilder : IHttpClientBuilder
+{
+    private readonly Dictionary<int, Func<DelegatingHandler>> _handlers = new();
+
+    public IHttpClient Create()
+    {
+        var httpclientHandler = new HttpClientHandler();
+
+        var client = new HttpClient(CreateHttpMessageHandler(httpclientHandler));
+
+        return new HttpClientWrapper(client);
+    }
+
+    private HttpMessageHandler CreateHttpMessageHandler(HttpMessageHandler httpMessageHandler)
+    {
+        _handlers
+            .OrderByDescending(handler => handler.Key)
+            .Select(handler => handler.Value)
+            .Reverse()
+            .ToList()
+            .ForEach(handler =>
+            {
+                var delegatingHandler = handler();
+                delegatingHandler.InnerHandler = httpMessageHandler;
+                httpMessageHandler = delegatingHandler;
+            });
+        return httpMessageHandler;
+    }
+}
+
+/// <summary>
+/// This class was made to make unit testing easier when HttpClient is used.
+/// </summary>
+internal class HttpClientWrapper : IHttpClient
+{
+    public HttpClientWrapper(HttpClient client)
+    {
+        Client = client;
+    }
+
+    public HttpClient Client { get; }
+
+    public Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+    {
+        return Client.SendAsync(request);
+    }
+}

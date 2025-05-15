@@ -135,7 +135,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                         ErrorMessageTimestamp = message.CreateTimestamp
                                                     };
                                                     await _publisher.PublishMessageAsync(_queueConfig.ErrorQueueName, errorMessage).ConfigureAwait(false);
-                                                    
+
                                                     //delete message
                                                     using var tran = _redisClient.Multi();
                                                     tran.XAck(queueName, groupName, data.id);
