@@ -13,7 +13,7 @@ services.AddRedisMQ(cli, config =>
     config.UseErrorQueue = true;  //是否在消费错误时, 消息推送到错误队列
     config.RedisPrefix = "Test:";  //Redis缓存前缀
     config.RegisterConsumerService = false;  //是否开启队列消费服务
-    config.RepublishNonAckTimeOutMessage = true;  //是否重新发布未正常Ack的消息到队列, 需要开启`RegisterConsumerService`
+    config.RepublishNonAckTimeOutMessage = true;  //是否重新发布未正常Ack的消息到队列`RegisterConsumerService`
 });
 ```
 
@@ -23,7 +23,7 @@ services.AddRedisMQ(cli, config =>
 [RedisMQConsumer("Test")]
 public class TestRedisMQConsumer : RedisMQConsumer<TestMessage>
 {
-    public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
+    public Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)
     {
         System.Console.WriteLine(message.Input);
 
@@ -31,10 +31,22 @@ public class TestRedisMQConsumer : RedisMQConsumer<TestMessage>
     }
 }
 
+[RedisMQConsumer("Test-Ack", IsAutoAck = false)]
+public class TestAckRedisMQConsumer : RedisMQConsumer<TestMessage>
+{
+    public async Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)
+    {
+        System.Console.WriteLine(message.Input);
+        
+        // 手动 ack
+        await messageHandler.AckAsync(cancellationToken);
+    }
+}
+
 [RedisMQConsumer("Delay", ConsumerCount = 1, PendingTimeOut = 10, IsDelayQueueConsumer = true)]
 public class DelayConsumer(ILogger<DelayConsumer> logger) : RedisMQConsumer<TestMessage>
 {
-    public Task OnMessageAsync(TestMessage message, CancellationToken cancellationToken = default)
+    public Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)
     {
         logger.LogInformation($"message from delay queue: {message.Input}");
         return Task.CompletedTask;
