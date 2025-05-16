@@ -1,4 +1,5 @@
 ﻿using FreeRedis;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -24,12 +25,14 @@ namespace Yarkool.RedisMQ
             if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();
 
-            if (queueConfig.UseErrorQueue && string.IsNullOrEmpty(queueConfig.ErrorQueueName))
+            if (queueConfig.ErrorQueueOptions != null && string.IsNullOrEmpty(queueConfig.ErrorQueueOptions.QueueName))
                 throw new RedisMQException("error queue name cannot be empty!");
 
             services.AddRedisMQConsumer();
             services.AddSingleton<IRedisMQPublisher, RedisMQPublisher>();
             services.AddSingleton<ConsumerServiceSelector>();
+
+            services.AddTransient<IStartupFilter, RedisMQStartupFilter>();
 
             if (queueConfig.RegisterConsumerService)
             {

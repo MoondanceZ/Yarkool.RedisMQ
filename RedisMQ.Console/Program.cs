@@ -12,10 +12,10 @@ var build = new HostBuilder()
 
         services.AddRedisMQ(cli, config =>
         {
-            config.UseErrorQueue = true;
             config.RedisPrefix = "Test:";
             config.RegisterConsumerService = false;
             config.RepublishNonAckTimeOutMessage = true;
+            config.UseErrorQueue();
         });
     });
 

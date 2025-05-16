@@ -5,5 +5,5 @@ public class MessagePageRequest : PageRequest
     /// <summary>
     /// Status
     /// </summary>
-    public string Status { get; set; }
+    public string? Status { get; set; }
 }

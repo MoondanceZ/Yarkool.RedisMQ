@@ -47,7 +47,7 @@ namespace Yarkool.RedisMQ
             var delaySeconds = delayTime.TotalSeconds;
             if (delaySeconds <= 0)
                 throw new RedisMQException("delay time cannot be <= 0s !");
-            var score = TimeHelper.GetMillisecondTimestamp() + delaySeconds * 1000;
+            var score = TimeHelper.GetMillisecondTimestamp() + (delaySeconds * 1000);
             var delayTimeSortedSetName = $"{queueName}:DelayTimeType";
             var delayQueueName = $"{delayTimeSortedSetName}:{delaySeconds}";
 

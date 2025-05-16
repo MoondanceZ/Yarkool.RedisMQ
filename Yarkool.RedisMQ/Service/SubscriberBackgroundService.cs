@@ -122,7 +122,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                     await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, ex, stoppingToken)!).ConfigureAwait(false);
                                                 }
 
-                                                if (_queueConfig.UseErrorQueue && message != null)
+                                                if (_queueConfig.ErrorQueueOptions != null && message != null)
                                                 {
                                                     var errorMessage = new ErrorMessage
                                                     {
@@ -134,14 +134,17 @@ public class ConsumerBackgroundService : BackgroundService
                                                         ErrorMessageContent = messageContent,
                                                         ErrorMessageTimestamp = message.CreateTimestamp
                                                     };
-                                                    await _publisher.PublishMessageAsync(_queueConfig.ErrorQueueName, errorMessage).ConfigureAwait(false);
+                                                    await _publisher.PublishMessageAsync(_queueConfig.ErrorQueueOptions.QueueName, errorMessage).ConfigureAwait(false);
 
                                                     //delete message
-                                                    using var tran = _redisClient.Multi();
-                                                    tran.XAck(queueName, groupName, data.id);
-                                                    tran.XDel(queueName, data.id);
-                                                    tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
-                                                    tran.Exec();
+                                                    if (_queueConfig.ErrorQueueOptions.IsDeleteOriginalQueueMessage)
+                                                    {
+                                                        using var tran = _redisClient.Multi();
+                                                        tran.XAck(queueName, groupName, data.id);
+                                                        tran.XDel(queueName, data.id);
+                                                        tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
+                                                        tran.Exec();
+                                                    }
                                                 }
                                             }
                                             catch (Exception errorEx)

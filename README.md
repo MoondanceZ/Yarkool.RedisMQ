@@ -10,7 +10,7 @@
 var cli = new RedisClient("127.0.0.1:6379,password=");
 services.AddRedisMQ(cli, config =>
 {
-    config.UseErrorQueue = true;  //是否在消费错误时, 消息推送到错误队列
+    config.UseErrorQueue();  //是否在消费错误时, 消息推送到错误队列
     config.RedisPrefix = "Test:";  //Redis缓存前缀
     config.RegisterConsumerService = false;  //是否开启队列消费服务
     config.RepublishNonAckTimeOutMessage = true;  //是否重新发布未正常Ack的消息到队列`RegisterConsumerService`

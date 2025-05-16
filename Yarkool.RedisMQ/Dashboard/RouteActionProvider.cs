@@ -32,7 +32,7 @@ public class RouteActionProvider
             PublishFailed = redisClient.Get<long>(CacheKeys.PublishFailed),
             PublishSucceeded = redisClient.Get<long>(CacheKeys.PublishSucceeded),
             AckCount = redisClient.Get<long>(CacheKeys.AckCount),
-            ErrorQueueLength = redisClient.XLen(queueConfig.ErrorQueueName)
+            ErrorQueueLength = !string.IsNullOrEmpty(queueConfig.ErrorQueueOptions?.QueueName) ? redisClient.XLen(queueConfig.ErrorQueueOptions?.QueueName) : 0
         };
         await httpContext.Response.WriteAsJsonAsync(result);
     }

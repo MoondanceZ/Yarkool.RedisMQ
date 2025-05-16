@@ -15,10 +15,10 @@ public class Tests
         var cli = new RedisClient("127.0.0.1:6379,password=,defaultDatabase=3");
         services.AddRedisMQ(cli, config =>
         {
-            config.UseErrorQueue = true;
             config.RedisPrefix = "RedisMQ:";
             config.RegisterConsumerService = false;
             config.RepublishNonAckTimeOutMessage = true;
+            config.UseErrorQueue();
         });
 
         _serviceProvider = services.BuildServiceProvider();

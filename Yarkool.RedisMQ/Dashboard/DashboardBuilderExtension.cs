@@ -14,14 +14,15 @@ public static class DashboardBuilderExtension
 {
     private const string EmbeddedFileNamespace = "Yarkool.RedisMQ.wwwroot.dist";
 
-    internal static IApplicationBuilder UseCapDashboard(this IApplicationBuilder app)
+    internal static IApplicationBuilder UseRedisMQDashboard(this IApplicationBuilder app)
     {
         if (app == null)
             throw new ArgumentNullException(nameof(app));
 
         var provider = app.ApplicationServices;
+        var queueConfig = provider.GetService<QueueConfig>();
 
-        var options = provider.GetService<DashboardOptions>();
+        var options = queueConfig?.DashboardOptions;
 
         if (options != null)
         {
@@ -33,37 +34,33 @@ public static class DashboardBuilderExtension
 
             var endpointRouteBuilder = (IEndpointRouteBuilder)app.Properties["__EndpointRouteBuilder"]!;
 
-            endpointRouteBuilder.MapGet(
-                options.PathMatch,
-                httpContext =>
-                {
-                    var path = httpContext.Request.Path.Value;
+            endpointRouteBuilder.MapGet(options.PathMatch, httpContext =>
+            {
+                var path = httpContext.Request.Path.Value;
 
-                    var redirectUrl = string.IsNullOrEmpty(path) || path.EndsWith("/") ? "index.html" : $"{path.Split('/').Last()}/index.html";
+                var redirectUrl = string.IsNullOrEmpty(path) || path.EndsWith("/") ? "index.html" : $"{path.Split('/').Last()}/index.html";
 
-                    httpContext.Response.StatusCode = 301;
-                    httpContext.Response.Headers["Location"] = redirectUrl;
-                    return Task.CompletedTask;
-                }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+                httpContext.Response.StatusCode = 301;
+                httpContext.Response.Headers["Location"] = redirectUrl;
+                return Task.CompletedTask;
+            }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
 
-            endpointRouteBuilder.MapGet(
-                options.PathMatch + "/index.html",
-                async httpContext =>
-                {
-                    httpContext.Response.StatusCode = 200;
-                    httpContext.Response.ContentType = "text/html;charset=utf-8";
+            endpointRouteBuilder.MapGet(options.PathMatch + "/index.html", async httpContext =>
+            {
+                httpContext.Response.StatusCode = 200;
+                httpContext.Response.ContentType = "text/html;charset=utf-8";
 
-                    await using var stream = options.GetType().Assembly.GetManifestResourceStream(EmbeddedFileNamespace + ".index.html");
+                await using var stream = options.GetType().Assembly.GetManifestResourceStream(EmbeddedFileNamespace + ".index.html");
 
-                    if (stream == null)
-                        throw new InvalidOperationException();
+                if (stream == null)
+                    throw new InvalidOperationException();
 
-                    using var sr = new StreamReader(stream);
-                    var htmlBuilder = new StringBuilder(await sr.ReadToEndAsync());
-                    htmlBuilder.Replace("%(servicePrefix)", options.PathBase + options.PathMatch + "/api");
-                    htmlBuilder.Replace("%(pollingInterval)", options.StatsPollingInterval.ToString());
-                    await httpContext.Response.WriteAsync(htmlBuilder.ToString(), Encoding.UTF8);
-                }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+                using var sr = new StreamReader(stream);
+                var htmlBuilder = new StringBuilder(await sr.ReadToEndAsync());
+                htmlBuilder.Replace("%(servicePrefix)", options.PathBase + options.PathMatch + "/api");
+                htmlBuilder.Replace("%(pollingInterval)", options.StatsPollingInterval.ToString());
+                await httpContext.Response.WriteAsync(htmlBuilder.ToString(), Encoding.UTF8);
+            }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
 
             new RouteActionProvider(endpointRouteBuilder, options).MapDashboardRoutes();
         }
