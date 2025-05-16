@@ -46,7 +46,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Dashboard\wwwroot\.vscode\settings.json"/>
+        <EmbeddedResource Include="Dashboard/wwwroot/dist/**/*" Exclude="**/*/*.map" />
     </ItemGroup>
 
 </Project>

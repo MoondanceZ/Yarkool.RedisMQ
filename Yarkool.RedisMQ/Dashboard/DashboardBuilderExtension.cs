@@ -12,7 +12,7 @@ namespace Yarkool.RedisMQ;
 
 public static class DashboardBuilderExtension
 {
-    private const string EmbeddedFileNamespace = "Yarkool.RedisMQ.wwwroot.dist";
+    private const string EmbeddedFileNamespace = "Yarkool.RedisMQ.Dashboard.wwwroot.dist";
 
     internal static IApplicationBuilder UseRedisMQDashboard(this IApplicationBuilder app)
     {
