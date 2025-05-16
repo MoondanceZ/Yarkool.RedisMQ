@@ -21,7 +21,6 @@ namespace Yarkool.RedisMQ
             _options?.Invoke(dashboardOptions);
             services.AddTransient<IStartupFilter, CapStartupFilter>();
             services.AddSingleton(dashboardOptions);
-            services.AddSingleton<MetricsEventListener>();
         }
     }
 

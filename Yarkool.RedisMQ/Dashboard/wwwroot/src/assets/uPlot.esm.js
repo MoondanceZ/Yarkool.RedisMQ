@@ -1376,7 +1376,7 @@ function log10AxisValsFilt(self, splits, axisIdx, foundSpace, foundIncr) {
             valToPos(5, scaleKey) - _10 >= minSpace ? RE_125 :
                 RE_1;
 
-    return splits.map(v => (sc.distr == 4 && v == 0) || re.test(v) ? v : null);
+    return splits.map(v => sc.distr == 4 && v == 0 || re.test(v) ? v : null);
 }
 
 function numSeriesVal(self, val) {

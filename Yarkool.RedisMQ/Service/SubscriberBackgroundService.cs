@@ -105,7 +105,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 using var tran = _redisClient.Multi();
                                                 tran.XAck(queueName, groupName, data.id);
                                                 tran.XDel(queueName, data.id);
-                                                tran.HDel(Constants.MessageIdMapping, message.MessageId);
+                                                tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
                                                 tran.Exec();
                                             }
 
@@ -140,7 +140,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                     using var tran = _redisClient.Multi();
                                                     tran.XAck(queueName, groupName, data.id);
                                                     tran.XDel(queueName, data.id);
-                                                    tran.HDel(Constants.MessageIdMapping, message.MessageId);
+                                                    tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
                                                     tran.Exec();
                                                 }
                                             }
@@ -205,7 +205,7 @@ public class ConsumerBackgroundService : BackgroundService
                     var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
 
                     using var tran = _redisClient.Multi();
-                    _redisClient.HSet(Constants.MessageIdMapping, baseMessage.MessageId, messageId);
+                    _redisClient.HSet(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
                     _redisClient.ZRem(item.DelayQueueName, item.Member);
                     tran.Exec();
                 }

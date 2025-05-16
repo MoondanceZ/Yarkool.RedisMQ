@@ -86,7 +86,7 @@ namespace Yarkool.RedisMQ
                                                 _redisClient.XDel(queueName, entry.id);
                                                 tran.XAdd(queueName, data);
                                                 var res = tran.Exec();
-                                                await _redisClient.HSetAsync(Constants.MessageIdMapping, message.MessageId, res[0].ToString());
+                                                await _redisClient.HSetAsync(CacheKeys.MessageIdMapping, message.MessageId, res[0].ToString());
 
                                                 _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
                                             }

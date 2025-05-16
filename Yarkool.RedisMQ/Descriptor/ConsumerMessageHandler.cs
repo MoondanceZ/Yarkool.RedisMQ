@@ -22,12 +22,12 @@ public class ConsumerMessageHandler
     {
         if (!string.IsNullOrEmpty(MessageId))
         {
-            var streamMessageId = await redisClient.HGetAsync(Constants.MessageIdMapping, MessageId).ConfigureAwait(false);
+            var streamMessageId = await redisClient.HGetAsync(CacheKeys.MessageIdMapping, MessageId).ConfigureAwait(false);
 
             using var tran = redisClient!.Multi();
             tran.XAck(queueName, groupName, streamMessageId);
             tran.XDel(queueName, streamMessageId);
-            tran.HDel(Constants.MessageIdMapping, MessageId);
+            tran.HDel(CacheKeys.MessageIdMapping, MessageId);
             tran.Exec();
         }
     }
@@ -45,7 +45,7 @@ public class ConsumerMessageHandler
         {
             if (string.IsNullOrEmpty(id))
                 continue;
-            var streamMessageId = await redisClient.HGetAsync(Constants.MessageIdMapping, id).ConfigureAwait(false);
+            var streamMessageId = await redisClient.HGetAsync(CacheKeys.MessageIdMapping, id).ConfigureAwait(false);
             streamMessageIdDic.Add(id, streamMessageId);
         }
 
@@ -56,7 +56,7 @@ public class ConsumerMessageHandler
             {
                 tran.XAck(queueName, groupName, item.Value);
                 tran.XDel(queueName, item.Value);
-                tran.HDel(Constants.MessageIdMapping, item.Key);
+                tran.HDel(CacheKeys.MessageIdMapping, item.Key);
             }
 
             tran.Exec();

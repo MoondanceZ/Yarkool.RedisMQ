@@ -6,9 +6,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 
-[assembly: InternalsVisibleTo("Yarkool.RedisMQ.K8s")]
+[assembly: InternalsVisibleTo("Yarkool.RedisMQ")]
 
-// ReSharper disable once CheckNamespace
 namespace Yarkool.RedisMQ;
 
 public static class DashboardBuilderExtension
