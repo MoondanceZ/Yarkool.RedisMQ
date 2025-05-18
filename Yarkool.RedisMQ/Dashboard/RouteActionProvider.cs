@@ -25,7 +25,7 @@ internal class RouteActionProvider
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
         var queueConfig = _serviceProvider.GetService<QueueConfig>()!;
-        var result = new StatisticsResponse
+        var result = new StatsResponse
         {
             ConsumeFailed = redisClient.Get<long>(CacheKeys.ConsumeFailed),
             ConsumeSucceeded = redisClient.Get<long>(CacheKeys.ConsumeSucceeded),
@@ -34,7 +34,7 @@ internal class RouteActionProvider
             AckCount = redisClient.Get<long>(CacheKeys.AckCount),
             ErrorQueueLength = !string.IsNullOrEmpty(queueConfig.ErrorQueueOptions?.QueueName) ? redisClient.XLen(queueConfig.ErrorQueueOptions?.QueueName) : 0
         };
-        await httpContext.Response.WriteAsJsonAsync(result);
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
     }
 
     public Task Health(HttpContext httpContext)
