@@ -21,6 +21,23 @@ internal class RouteActionProvider
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
+    #if DEBUG
+    private static StatsResponse status =new StatsResponse
+    {
+    };
+    private async Task Stats(HttpContext httpContext)
+    {
+        var redisClient = _serviceProvider.GetService<IRedisClient>()!;
+        var queueConfig = _serviceProvider.GetService<QueueConfig>()!;
+        
+        status.PublishSucceeded += Random.Shared.Next(1, 10);
+        status.ConsumeSucceeded += Random.Shared.Next(1, 10);
+        status.PublishFailed += Random.Shared.Next(1, 3);
+        status.ConsumeFailed += Random.Shared.Next(0, 3);
+        status.AckCount += Random.Shared.Next(1, 10);
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(status));
+    }
+    #else
     private async Task Stats(HttpContext httpContext)
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
@@ -34,8 +51,10 @@ internal class RouteActionProvider
             AckCount = redisClient.Get<long>(CacheKeys.AckCount),
             ErrorQueueLength = !string.IsNullOrEmpty(queueConfig.ErrorQueueOptions?.QueueName) ? redisClient.XLen(queueConfig.ErrorQueueOptions?.QueueName) : 0
         };
+        
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
     }
+    #endif
 
     public Task Health(HttpContext httpContext)
     {
