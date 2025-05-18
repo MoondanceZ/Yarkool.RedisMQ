@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Yarkool.RedisMQ;
 
-public class RouteActionProvider
+internal class RouteActionProvider
 (
     IEndpointRouteBuilder builder,
     DashboardOptions options

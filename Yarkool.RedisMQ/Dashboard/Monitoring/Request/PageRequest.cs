@@ -1,6 +1,6 @@
 namespace Yarkool.RedisMQ;
 
-public class PageRequest
+internal class PageRequest
 {
     /// <summary>
     /// PageIndex

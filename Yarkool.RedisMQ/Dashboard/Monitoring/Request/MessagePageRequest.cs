@@ -1,6 +1,6 @@
 namespace Yarkool.RedisMQ;
 
-public class MessagePageRequest : PageRequest
+internal class MessagePageRequest : PageRequest
 {
     /// <summary>
     /// Status

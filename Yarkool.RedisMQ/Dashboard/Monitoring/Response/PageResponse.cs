@@ -1,6 +1,6 @@
 namespace Yarkool.RedisMQ;
 
-public class PageResponse<T>
+internal class PageResponse<T>
 {
     /// <summary>
     /// Items

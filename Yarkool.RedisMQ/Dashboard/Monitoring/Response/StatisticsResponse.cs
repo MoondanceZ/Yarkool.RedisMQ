@@ -1,6 +1,6 @@
 namespace Yarkool.RedisMQ;
 
-public class StatisticsResponse
+internal class StatisticsResponse
 {
     /// <summary>
     /// PublishSucceeded

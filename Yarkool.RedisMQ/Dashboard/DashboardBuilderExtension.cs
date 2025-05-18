@@ -10,7 +10,7 @@ using Microsoft.Extensions.FileProviders;
 
 namespace Yarkool.RedisMQ;
 
-public static class DashboardBuilderExtension
+internal static class DashboardBuilderExtension
 {
     private const string EmbeddedFileNamespace = "Yarkool.RedisMQ.Dashboard.wwwroot.dist";
 

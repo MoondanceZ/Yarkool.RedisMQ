@@ -46,7 +46,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Dashboard/wwwroot/dist/**/*" Exclude="**/*/*.map" />
+        <EmbeddedResource Include="Dashboard/wwwroot/dist/**/*" Exclude="**/*/*.map"/>
     </ItemGroup>
 
 </Project>

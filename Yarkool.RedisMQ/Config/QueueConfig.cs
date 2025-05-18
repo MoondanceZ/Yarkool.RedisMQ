@@ -3,7 +3,7 @@
     /// <summary>
     /// 队列配置
     /// </summary>
-    public class QueueConfig
+    public partial class QueueConfig
     {
         /// <summary>
         /// 注册消费者服务
@@ -26,26 +26,23 @@
         public ISerializer Serializer { get; set; } = new DefaultSerializer();
 
         /// <summary>
-        /// DashboardOptions
-        /// </summary>
-        internal DashboardOptions? DashboardOptions { get; set; }
-
-        /// <summary>
-        /// ErrorQueueOptions
-        /// </summary>
-        internal ErrorQueueOptions? ErrorQueueOptions { get; set; }
-
-        /// <summary>
-        /// 使用失败队列
+        /// UseErrorQueue
         /// </summary>
         /// <param name="options"></param>
         public void UseErrorQueue(Action<ErrorQueueOptions>? options = null)
         {
             ErrorQueueOptions = new ErrorQueueOptions();
-            if (options != null)
-            {
-                options.Invoke(ErrorQueueOptions);
-            }
+            options?.Invoke(ErrorQueueOptions);
+        }
+
+        /// <summary>
+        /// UseDashboard
+        /// </summary>
+        /// <param name="options"></param>
+        public void UseDashboard(Action<DashboardOptions>? options = null)
+        {
+            DashboardOptions = new DashboardOptions();
+            options?.Invoke(DashboardOptions);
         }
     }
 }

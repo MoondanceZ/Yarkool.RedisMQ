@@ -1,6 +1,6 @@
 namespace Yarkool.RedisMQ;
 
-public class BaseResponse
+internal class BaseResponse
 {
     /// <summary>
     /// Code, success = 0
