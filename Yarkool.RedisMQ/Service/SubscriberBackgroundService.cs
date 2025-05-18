@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
 using System.Text;
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
@@ -185,37 +186,46 @@ public class ConsumerBackgroundService : BackgroundService
             var delaySecondsSet = _redisClient.SMembers<double>(delayTimeSortedSetName);
             if (delaySecondsSet != null && delaySecondsSet.Any())
             {
-                var messageMemberList = new List<(string DelayQueueName, string Member, decimal Score)>();
-                foreach (var delaySeconds in delaySecondsSet)
+                var messageMemberBag = new ConcurrentBag<(string DelayQueueName, string Member, decimal Score)>();
+                foreach (var delaySeconds in delaySecondsSet.AsParallel())
                 {
                     var delayQueueName = $"{delayTimeSortedSetName}:{delaySeconds}";
                     var zMembers = await _redisClient.ZRangeByScoreWithScoresAsync(delayQueueName, 0, TimeHelper.GetMillisecondTimestamp(), 0, prefetchCount).ConfigureAwait(false);
 
                     foreach (var item in zMembers)
                     {
-                        messageMemberList.Add((delayQueueName, item.member, item.score));
+                        messageMemberBag.Add((delayQueueName, item.member, item.score));
                     }
                 }
 
-                messageMemberList = messageMemberList.OrderBy(x => x.Score).ToList();
-                foreach (var item in messageMemberList)
+                var messageMemberList = messageMemberBag.OrderBy(x => x.Score).ToList();
+                if (messageMemberList.Any())
                 {
-                    var baseMessage = _queueConfig.Serializer.Deserialize<BaseMessage>(item.Member ?? "");
-                    if (baseMessage == null)
-                        continue;
+                    foreach (var item in messageMemberList.AsParallel())
+                    {
+                        var baseMessage = _queueConfig.Serializer.Deserialize<BaseMessage>(item.Member ?? "");
+                        if (baseMessage == null)
+                            continue;
 
-                    var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(baseMessage));
-                    var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
+                        var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(baseMessage));
+                        var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
 
-                    using var tran = _redisClient.Multi();
-                    _redisClient.HSet(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
-                    _redisClient.ZRem(item.DelayQueueName, item.Member);
-                    tran.Exec();
+                        using var tran = _redisClient.Multi();
+                        _redisClient.HSet(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
+                        _redisClient.ZRem(item.DelayQueueName, item.Member);
+                        tran.Exec();
+                    }
+
+                    await Task.Delay(1000, stoppingToken);
+                }
+                else
+                {
+                    await Task.Delay(5000, stoppingToken);
                 }
             }
             else
             {
-                await Task.Delay(1000, stoppingToken);
+                await Task.Delay(5000, stoppingToken);
             }
         }
     }
