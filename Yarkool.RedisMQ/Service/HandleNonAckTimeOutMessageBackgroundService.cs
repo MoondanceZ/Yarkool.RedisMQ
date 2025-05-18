@@ -64,7 +64,7 @@ namespace Yarkool.RedisMQ
                                 var timeOutPendingResults = await _redisClient.XPendingAsync(queueName, groupName, "0-0", $"{timeOutMessageIdTimestamp}-0", 50, curConsumerName).ConfigureAwait(false);
                                 if (timeOutPendingResults != null && timeOutPendingResults.Length != 0)
                                 {
-                                    foreach (var result in timeOutPendingResults)
+                                    foreach (var result in timeOutPendingResults.AsParallel())
                                     {
                                         var messageId = result.id;
                                         var messageRange = await _redisClient.XRangeAsync(queueName, messageId, messageId).ConfigureAwait(false);

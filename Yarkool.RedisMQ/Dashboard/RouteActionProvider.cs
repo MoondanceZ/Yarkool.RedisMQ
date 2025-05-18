@@ -30,11 +30,11 @@ internal class RouteActionProvider
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
         var queueConfig = _serviceProvider.GetService<QueueConfig>()!;
         
-        status.PublishSucceeded += Random.Shared.Next(1, 10);
-        status.ConsumeSucceeded += Random.Shared.Next(1, 10);
+        status.PublishSucceeded += Random.Shared.Next(1, 100);
+        status.ConsumeSucceeded += Random.Shared.Next(1, 100);
         status.PublishFailed += Random.Shared.Next(1, 3);
         status.ConsumeFailed += Random.Shared.Next(0, 3);
-        status.AckCount += Random.Shared.Next(1, 10);
+        status.AckCount += Random.Shared.Next(1, 100);
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(status));
     }
     #else

@@ -220,7 +220,7 @@ public class ConsumerBackgroundService : BackgroundService
                 }
                 else
                 {
-                    await Task.Delay(5000, stoppingToken);
+                    await Task.Delay(3000, stoppingToken);
                 }
             }
             else
