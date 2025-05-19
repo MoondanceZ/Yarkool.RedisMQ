@@ -19,35 +19,19 @@ internal class RouteActionProvider
         var prefixMatch = options.PathMatch + "/api";
 
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
-        builder.MapGet(prefixMatch + "/24h_stats", TwentyFourHoursStats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
     private async Task Stats(HttpContext httpContext)
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
         var queueConfig = _serviceProvider.GetService<QueueConfig>()!;
-        var result = new StatsResponse
-        {
-            ConsumeFailed = redisClient.Get<long>($"{CacheKeys.ConsumeFailed}:Total"),
-            ConsumeSucceeded = redisClient.Get<long>($"{CacheKeys.ConsumeSucceeded}:Total"),
-            PublishFailed = redisClient.Get<long>($"{CacheKeys.PublishFailed}:Total"),
-            PublishSucceeded = redisClient.Get<long>($"{CacheKeys.PublishSucceeded}:Total"),
-            AckCount = redisClient.Get<long>($"{CacheKeys.AckCount}:Total"),
-            ErrorQueueLength = !string.IsNullOrEmpty(queueConfig.ErrorQueueOptions?.QueueName) ? redisClient.XLen(queueConfig.ErrorQueueOptions?.QueueName) : 0
-        };
-
-        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
-    }
-
-    private async Task TwentyFourHoursStats(HttpContext httpContext)
-    {
-        var redisClient = _serviceProvider.GetService<IRedisClient>()!;
-        var resultList = new List<TwentyFourHoursStatsResponse>();
+        
+        var twentyFourHoursStatsList = new List<StatsResponse.Types.TwentyFourHoursStatsInfo>();
         var now = DateTime.Now;
         for (int i = 0; i < 24; i++)
         {
             var time = now.AddHours(-i).ToString("yyyyMMddHH");
-            var result = new StatsResponse
+            var statsInfo = new StatsResponse.Types.StatsInfo
             {
                 ConsumeFailed = redisClient.Get<long>($"{CacheKeys.ConsumeFailed}:{time}"),
                 ConsumeSucceeded = redisClient.Get<long>($"{CacheKeys.ConsumeSucceeded}:{time}"),
@@ -55,16 +39,37 @@ internal class RouteActionProvider
                 PublishSucceeded = redisClient.Get<long>($"{CacheKeys.PublishSucceeded}:{time}"),
                 AckCount = redisClient.Get<long>($"{CacheKeys.AckCount}:{time}")
             };
-            resultList.Add(new TwentyFourHoursStatsResponse
+            twentyFourHoursStatsList.Add(new StatsResponse.Types.TwentyFourHoursStatsInfo
             {
                 Time = now.AddHours(-i).ToString("MM-dd HH:00"),
-                Stats = result
+                Stats = statsInfo
             });
         }
+        twentyFourHoursStatsList.Reverse();
+        
+        var result = new StatsResponse
+        {
+            RealTimeStats = new StatsResponse.Types.StatsInfo
+            {
+                ConsumeFailed = redisClient.Get<long>($"{CacheKeys.ConsumeFailed}:Total"),
+                ConsumeSucceeded = redisClient.Get<long>($"{CacheKeys.ConsumeSucceeded}:Total"),
+                PublishFailed = redisClient.Get<long>($"{CacheKeys.PublishFailed}:Total"),
+                PublishSucceeded = redisClient.Get<long>($"{CacheKeys.PublishSucceeded}:Total"),
+                AckCount = redisClient.Get<long>($"{CacheKeys.AckCount}:Total"),
+                ErrorQueueLength = !string.IsNullOrEmpty(queueConfig.ErrorQueueOptions?.QueueName) ? redisClient.XLen(queueConfig.ErrorQueueOptions?.QueueName) : 0
+            },
+            TwentyFourHoursStats = twentyFourHoursStatsList,
+            ServerInfo = new StatsResponse.Types.ServerInfo
+            {
+                ConsumerCount = 0,
+                QueueCount = 0,
+                ServerCount = 0
+            }
+        };
 
-        resultList.Reverse();
-        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(resultList));
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
     }
+
 
     public Task Health(HttpContext httpContext)
     {

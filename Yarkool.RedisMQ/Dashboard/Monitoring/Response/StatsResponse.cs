@@ -3,32 +3,89 @@ namespace Yarkool.RedisMQ;
 internal class StatsResponse
 {
     /// <summary>
-    /// PublishSucceeded
+    /// RealTimeStats
     /// </summary>
-    public long PublishSucceeded { get; set; }
+    public Types.StatsInfo RealTimeStats { get; set; } = null!;
 
     /// <summary>
-    /// PublishFailed
+    /// TwentyFourHoursStats
     /// </summary>
-    public long PublishFailed { get; set; }
+    public IEnumerable<Types.TwentyFourHoursStatsInfo> TwentyFourHoursStats { get; set; } = [];
 
     /// <summary>
-    /// ConsumeSucceeded
+    /// ServerInfo
     /// </summary>
-    public long ConsumeSucceeded { get; set; }
+    public Types.ServerInfo ServerInfo { get; set; } = null!;
+    
+    public static class Types
+    {
+        public class StatsInfo
+        {
+            /// <summary>
+            /// PublishSucceeded
+            /// </summary>
+            public long PublishSucceeded { get; set; }
 
-    /// <summary>
-    /// ConsumeFailed
-    /// </summary>
-    public long ConsumeFailed { get; set; }
+            /// <summary>
+            /// PublishFailed
+            /// </summary>
+            public long PublishFailed { get; set; }
 
-    /// <summary>
-    /// AckCount
-    /// </summary>
-    public long AckCount { get; set; }
+            /// <summary>
+            /// ConsumeSucceeded
+            /// </summary>
+            public long ConsumeSucceeded { get; set; }
 
-    /// <summary>
-    /// ErrorQueueLength
-    /// </summary>
-    public long ErrorQueueLength { get; set; }
+            /// <summary>
+            /// ConsumeFailed
+            /// </summary>
+            public long ConsumeFailed { get; set; }
+
+            /// <summary>
+            /// AckCount
+            /// </summary>
+            public long AckCount { get; set; }
+
+            /// <summary>
+            /// ErrorQueueLength
+            /// </summary>
+            public long ErrorQueueLength { get; set; }
+        }
+        
+        public class TwentyFourHoursStatsInfo
+        {
+            /// <summary>
+            /// Time
+            /// </summary>
+            public string Time { get; set; } = null!;
+
+            /// <summary>
+            /// Stats
+            /// </summary>
+            public StatsInfo Stats { get; set; } = null!;
+        }
+
+        public class ServerInfo
+        {
+            /// <summary>
+            /// QueueCount
+            /// </summary>
+            public int QueueCount { get; set; }
+
+            /// <summary>
+            /// ConsumerCount
+            /// </summary>
+            public int ConsumerCount { get; set; }
+
+            /// <summary>
+            /// ServerCount
+            /// </summary>
+            public int ServerCount { get; set; }
+
+            /// <summary>
+            /// MessageCount
+            /// </summary>
+            public int MessageCount { get; set; }
+        }
+    }
 }
