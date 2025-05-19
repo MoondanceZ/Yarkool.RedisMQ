@@ -6,7 +6,7 @@ public class ConsumerServiceSelector
 {
     private readonly List<ConsumerExecutorDescriptor> _cacheList;
 
-    public ConsumerServiceSelector(QueueConfig queueConfig, CacheKeyManager cacheKeyManager)
+    public ConsumerServiceSelector(QueueConfig queueConfig)
     {
         _cacheList = new List<ConsumerExecutorDescriptor>();
 
@@ -24,8 +24,9 @@ public class ConsumerServiceSelector
             if (string.IsNullOrEmpty(queueConsumerAttribute.QueueName))
                 throw new RedisMQException($"{consumerType.Name}'s `RedisMQConsumerAttribute` queue name is null or empty!");
 
-            var queueName = cacheKeyManager.ParseCacheKey(queueConsumerAttribute.QueueName);
-            var groupName = $"{queueConsumerAttribute.QueueName}_Group";
+            var queueName = queueConsumerAttribute.QueueName;
+            var groupName = $"{queueName}:Group";
+            var consumerName = $"{queueName}:Consumer";
 
             if (_cacheList.Any(x => x.QueueName == queueName))
                 throw new RedisMQException($"Cannot add queue `{queueName}` repeatedly!");
@@ -36,6 +37,7 @@ public class ConsumerServiceSelector
                 MessageTypeInfo = messageTypeInfo,
                 QueueName = queueName,
                 GroupName = groupName,
+                ConsumerName = consumerName,
                 IsDelayQueueConsumer = queueConsumerAttribute.IsDelayQueueConsumer,
                 PendingTimeOut = queueConsumerAttribute.PendingTimeOut,
                 RedisMQConsumerAttribute = queueConsumerAttribute,

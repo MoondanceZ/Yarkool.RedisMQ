@@ -33,6 +33,9 @@
         {
             ErrorQueueOptions = new ErrorQueueOptions();
             options?.Invoke(ErrorQueueOptions);
+
+            if (string.IsNullOrEmpty(ErrorQueueOptions.QueueName))
+                throw new ArgumentNullException(nameof(ErrorQueueOptions.QueueName));
         }
 
         /// <summary>

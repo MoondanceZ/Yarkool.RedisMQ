@@ -15,6 +15,11 @@ public class ConsumerExecutorDescriptor
     public string GroupName { get; set; } = default!;
 
     /// <summary>
+    /// ConsumerName
+    /// </summary>
+    public string ConsumerName { get; set; } = default!;
+
+    /// <summary>
     /// 是否是延迟队列消费者
     /// </summary>
     public bool IsDelayQueueConsumer { get; set; }

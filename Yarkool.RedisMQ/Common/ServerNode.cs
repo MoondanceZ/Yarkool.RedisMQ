@@ -11,4 +11,9 @@ internal class ServerNode
     /// LiveTime
     /// </summary>
     public DateTime LiveTime { get; set; }
+
+    /// <summary>
+    /// ConsumerList
+    /// </summary>
+    public IEnumerable<string> ConsumerList { get; set; } = [];
 }

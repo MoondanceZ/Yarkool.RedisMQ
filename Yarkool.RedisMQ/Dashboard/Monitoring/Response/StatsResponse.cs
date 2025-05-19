@@ -16,7 +16,7 @@ internal class StatsResponse
     /// ServerInfo
     /// </summary>
     public Types.ServerInfo ServerInfo { get; set; } = null!;
-    
+
     public static class Types
     {
         public class StatsInfo
@@ -51,7 +51,7 @@ internal class StatsResponse
             /// </summary>
             public long ErrorQueueLength { get; set; }
         }
-        
+
         public class TwentyFourHoursStatsInfo
         {
             /// <summary>
