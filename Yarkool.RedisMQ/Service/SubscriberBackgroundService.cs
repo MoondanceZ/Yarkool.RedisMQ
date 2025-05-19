@@ -88,7 +88,7 @@ public class ConsumerBackgroundService : BackgroundService
                                     foreach (var data in entryResultEntries)
                                     {
                                         var messageHandler = new ConsumerMessageHandler(queueName, groupName, _redisClient);
-                                        var time = DateTime.Now.ToString("yyyyMMddHH00");
+                                        var time = DateTime.Now.ToString("yyyyMMddHH");
                                         try
                                         {
                                             var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);

@@ -19,6 +19,7 @@ internal class RouteActionProvider
         var prefixMatch = options.PathMatch + "/api";
 
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/24h_stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
     private async Task Stats(HttpContext httpContext)
@@ -36,6 +37,31 @@ internal class RouteActionProvider
         };
 
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
+    }
+
+    private async Task TwentyFourHoursStats(HttpContext httpContext)
+    {
+        var redisClient = _serviceProvider.GetService<IRedisClient>()!;
+        var resultList = new List<TwentyFourHoursStatsResponse>();
+        for (int i = 0; i < 24; i++)
+        {
+            var time = DateTime.Now.AddHours(i).ToString("yyyyMMddHH");
+            var result = new StatsResponse
+            {
+                ConsumeFailed = redisClient.Get<long>($"{CacheKeys.ConsumeFailed}:{time}"),
+                ConsumeSucceeded = redisClient.Get<long>($"{CacheKeys.ConsumeSucceeded}:{time}"),
+                PublishFailed = redisClient.Get<long>($"{CacheKeys.PublishFailed}:{time}"),
+                PublishSucceeded = redisClient.Get<long>($"{CacheKeys.PublishSucceeded}:{time}"),
+                AckCount = redisClient.Get<long>($"{CacheKeys.AckCount}:{time}")
+            };
+            resultList.Add(new TwentyFourHoursStatsResponse
+            {
+                Time = time,
+                Stats = result
+            });
+        }
+
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(resultList));
     }
 
     public Task Health(HttpContext httpContext)

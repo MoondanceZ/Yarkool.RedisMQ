@@ -45,7 +45,7 @@ public class ConsumerMessageHandler
 
         if (streamMessageIdDic.Any())
         {
-            var time = DateTime.Now.ToString("yyyyMMddHH00");
+            var time = DateTime.Now.ToString("yyyyMMddHH");
             using var tran = redisClient.Multi();
             foreach (var item in streamMessageIdDic)
             {

@@ -19,7 +19,7 @@ namespace Yarkool.RedisMQ
         /// <returns></returns>
         public async Task<string> PublishMessageAsync(string queueName, object? message)
         {
-            var time = DateTime.Now.ToString("yyyyMMddHH00");
+            var time = DateTime.Now.ToString("yyyyMMddHH");
             try
             {
                 if (string.IsNullOrEmpty(queueName))
@@ -59,7 +59,7 @@ namespace Yarkool.RedisMQ
         /// <returns></returns>
         public Task<string> PublishMessageAsync(string queueName, object? message, TimeSpan delayTime)
         {
-            var time = DateTime.Now.ToString("yyyyMMddHH00");
+            var time = DateTime.Now.ToString("yyyyMMddHH");
             try
             {
                 if (string.IsNullOrEmpty(queueName))
