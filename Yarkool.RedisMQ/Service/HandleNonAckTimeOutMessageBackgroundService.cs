@@ -12,13 +12,15 @@ namespace Yarkool.RedisMQ
     {
         private readonly ConsumerServiceSelector _consumerServiceSelector;
         private readonly QueueConfig _queueConfig;
+        private readonly CacheKeyManager _cacheKeyManager;
         private readonly IRedisClient _redisClient;
         private readonly ILogger<HandlePendingTimeOutService> _logger;
 
-        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, IRedisClient redisClient, ILogger<HandlePendingTimeOutService> logger)
+        public HandlePendingTimeOutService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, CacheKeyManager cacheKeyManager, IRedisClient redisClient, ILogger<HandlePendingTimeOutService> logger)
         {
             _consumerServiceSelector = consumerServiceSelector;
             _queueConfig = queueConfig;
+            _cacheKeyManager = cacheKeyManager;
             _redisClient = redisClient;
             _logger = logger;
 
@@ -86,7 +88,7 @@ namespace Yarkool.RedisMQ
                                                 _redisClient.XDel(queueName, entry.id);
                                                 tran.XAdd(queueName, data);
                                                 var res = tran.Exec();
-                                                await _redisClient.HSetAsync(CacheKeys.MessageIdMapping, message.MessageId, res[0].ToString());
+                                                await _redisClient.HSetAsync(_cacheKeyManager.MessageIdMapping, message.MessageId, res[0].ToString());
 
                                                 _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
                                             }

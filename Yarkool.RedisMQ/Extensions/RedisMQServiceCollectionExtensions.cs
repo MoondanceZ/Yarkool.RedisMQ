@@ -21,6 +21,7 @@ namespace Yarkool.RedisMQ
             config?.Invoke(queueConfig);
 
             services.AddSingleton(queueConfig);
+            services.AddSingleton<CacheKeyManager>();
 
             if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();

@@ -9,7 +9,8 @@ namespace Yarkool.RedisMQ;
 internal class RouteActionProvider
 (
     IEndpointRouteBuilder builder,
-    DashboardOptions options
+    DashboardOptions options,
+    CacheKeyManager cacheKeyManager
 )
 {
     private readonly IServiceProvider _serviceProvider = builder.ServiceProvider;
@@ -32,11 +33,11 @@ internal class RouteActionProvider
         {
             var time = now.AddHours(-i).ToString("yyyyMMddHH");
             var twentyFourHoursPipe = redisClient.StartPipe();
-            twentyFourHoursPipe.Get<long>($"{CacheKeys.ConsumeFailed}:{time}");
-            twentyFourHoursPipe.Get<long>($"{CacheKeys.ConsumeSucceeded}:{time}");
-            twentyFourHoursPipe.Get<long>($"{CacheKeys.PublishFailed}:{time}");
-            twentyFourHoursPipe.Get<long>($"{CacheKeys.PublishSucceeded}:{time}");
-            twentyFourHoursPipe.Get<long>($"{CacheKeys.AckCount}:{time}");
+            twentyFourHoursPipe.Get<long>($"{cacheKeyManager.ConsumeFailed}:{time}");
+            twentyFourHoursPipe.Get<long>($"{cacheKeyManager.ConsumeSucceeded}:{time}");
+            twentyFourHoursPipe.Get<long>($"{cacheKeyManager.PublishFailed}:{time}");
+            twentyFourHoursPipe.Get<long>($"{cacheKeyManager.PublishSucceeded}:{time}");
+            twentyFourHoursPipe.Get<long>($"{cacheKeyManager.AckCount}:{time}");
             var twentyFourHoursResults = twentyFourHoursPipe.EndPipe();
 
             var statsInfo = new StatsResponse.Types.StatsInfo
@@ -57,14 +58,14 @@ internal class RouteActionProvider
         twentyFourHoursStatsList.Reverse();
 
         var realTimePipe = redisClient.StartPipe();
-        realTimePipe.Get<long>($"{CacheKeys.ConsumeFailed}:Total"); //0
-        realTimePipe.Get<long>($"{CacheKeys.ConsumeSucceeded}:Total"); //1
-        realTimePipe.Get<long>($"{CacheKeys.PublishFailed}:Total"); //2
-        realTimePipe.Get<long>($"{CacheKeys.PublishSucceeded}:Total"); //3
-        realTimePipe.Get<long>($"{CacheKeys.AckCount}:Total"); //4
+        realTimePipe.Get<long>($"{cacheKeyManager.ConsumeFailed}:Total"); //0
+        realTimePipe.Get<long>($"{cacheKeyManager.ConsumeSucceeded}:Total"); //1
+        realTimePipe.Get<long>($"{cacheKeyManager.PublishFailed}:Total"); //2
+        realTimePipe.Get<long>($"{cacheKeyManager.PublishSucceeded}:Total"); //3
+        realTimePipe.Get<long>($"{cacheKeyManager.AckCount}:Total"); //4
         realTimePipe.XLen(queueConfig.ErrorQueueOptions?.QueueName); //5
-        realTimePipe.SCard(CacheKeys.QueueList); //6
-        realTimePipe.SCard(CacheKeys.ConsumerList); //7
+        realTimePipe.SCard(cacheKeyManager.QueueList); //6
+        realTimePipe.SCard(cacheKeyManager.ConsumerList); //7
         var realTimeResults = realTimePipe.EndPipe();
 
         var result = new StatsResponse
@@ -84,7 +85,7 @@ internal class RouteActionProvider
                 MessageCount = (long)realTimeResults[3],
                 QueueCount = (long)realTimeResults[6],
                 ConsumerCount = (long)realTimeResults[7],
-                ServerCount = redisClient.HGetAll<DateTime>(CacheKeys.ServerNodes).Count(x => x.Value > now.AddMinutes(-2)),
+                ServerCount = redisClient.HGetAll<DateTime>(cacheKeyManager.ServerNodes).Count(x => x.Value > now.AddMinutes(-2)),
             }
         };
 

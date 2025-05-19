@@ -13,18 +13,20 @@ public class ConsumerBackgroundService : BackgroundService
 {
     private readonly ConsumerServiceSelector _consumerServiceSelector;
     private readonly QueueConfig _queueConfig;
+    private readonly CacheKeyManager _cacheKeyManager;
     private readonly IRedisClient _redisClient;
     private readonly IRedisMQPublisher _publisher;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ConsumerBackgroundService> _logger;
 
-    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, IRedisClient redisClient, IRedisMQPublisher publisher, IServiceProvider serviceProvider, ILogger<ConsumerBackgroundService> logger)
+    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, CacheKeyManager cacheKeyManager, IRedisClient redisClient, IRedisMQPublisher publisher, IServiceProvider serviceProvider,  ILogger<ConsumerBackgroundService> logger)
     {
         _consumerServiceSelector = consumerServiceSelector;
         _queueConfig = queueConfig;
         _redisClient = redisClient;
         _publisher = publisher;
         _serviceProvider = serviceProvider;
+        _cacheKeyManager = cacheKeyManager;
         _logger = logger;
 
         foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
@@ -72,7 +74,7 @@ public class ConsumerBackgroundService : BackgroundService
             {
                 var consumerIndex = i + 1;
                 var curConsumerName = $"{consumerName}_{consumerIndex}";
-                _redisClient.SAdd(CacheKeys.ConsumerList, curConsumerName);
+                _redisClient.SAdd(_cacheKeyManager.ConsumerList, curConsumerName);
                 Task.Run(async () =>
                 {
                     _logger?.LogInformation($"{consumerName.Replace(_queueConfig.RedisPrefix ?? "", "")}_{consumerIndex} subscribing");
@@ -91,7 +93,7 @@ public class ConsumerBackgroundService : BackgroundService
                                 {
                                     foreach (var data in entryResultEntries)
                                     {
-                                        var messageHandler = new ConsumerMessageHandler(queueName, groupName, _redisClient);
+                                        var messageHandler = new ConsumerMessageHandler(queueName, groupName, _redisClient, _cacheKeyManager);
                                         var time = DateTime.Now.ToString("yyyyMMddHH");
                                         try
                                         {
@@ -106,18 +108,18 @@ public class ConsumerBackgroundService : BackgroundService
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
 
                                             using var tran = _redisClient.Multi();
-                                            tran.IncrBy($"{CacheKeys.ConsumeSucceeded}:Total", 1);
-                                            tran.IncrBy($"{CacheKeys.ConsumeSucceeded}:{time}", 1);
-                                            tran.Expire($"{CacheKeys.ConsumeSucceeded}:{time}", TimeSpan.FromHours(30));
+                                            tran.IncrBy($"{_cacheKeyManager.ConsumeSucceeded}:Total", 1);
+                                            tran.IncrBy($"{_cacheKeyManager.ConsumeSucceeded}:{time}", 1);
+                                            tran.Expire($"{_cacheKeyManager.ConsumeSucceeded}:{time}", TimeSpan.FromHours(30));
                                             if (isAutoAck)
                                             {
                                                 //ACK
                                                 tran.XAck(queueName, groupName, data.id);
                                                 tran.XDel(queueName, data.id);
-                                                tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
-                                                tran.IncrBy($"{CacheKeys.AckCount}:Total", 1);
-                                                tran.IncrBy($"{CacheKeys.AckCount}:{time}", 1);
-                                                tran.Expire($"{CacheKeys.AckCount}:{time}", TimeSpan.FromHours(30));
+                                                tran.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
+                                                tran.IncrBy($"{_cacheKeyManager.AckCount}:Total", 1);
+                                                tran.IncrBy($"{_cacheKeyManager.AckCount}:{time}", 1);
+                                                tran.Expire($"{_cacheKeyManager.AckCount}:{time}", TimeSpan.FromHours(30));
                                             }
 
                                             tran.Exec();
@@ -129,9 +131,9 @@ public class ConsumerBackgroundService : BackgroundService
                                             try
                                             {
                                                 using var pipe = _redisClient.StartPipe();
-                                                pipe.IncrBy($"{CacheKeys.ConsumeFailed}:Total", 1);
-                                                pipe.IncrBy($"{CacheKeys.ConsumeFailed}:{time}", 1);
-                                                pipe.Expire($"{CacheKeys.ConsumeFailed}:{time}", TimeSpan.FromHours(30));
+                                                pipe.IncrBy($"{_cacheKeyManager.ConsumeFailed}:Total", 1);
+                                                pipe.IncrBy($"{_cacheKeyManager.ConsumeFailed}:{time}", 1);
+                                                pipe.Expire($"{_cacheKeyManager.ConsumeFailed}:{time}", TimeSpan.FromHours(30));
                                                 pipe.EndPipe();
 
                                                 //Execute message
@@ -161,7 +163,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                         using var tran = _redisClient.Multi();
                                                         tran.XAck(queueName, groupName, data.id);
                                                         tran.XDel(queueName, data.id);
-                                                        tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
+                                                        tran.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
                                                         tran.Exec();
                                                     }
                                                 }
@@ -230,7 +232,7 @@ public class ConsumerBackgroundService : BackgroundService
                         var messageId = await _redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
 
                         using var tran = _redisClient.Multi();
-                        _redisClient.HSet(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
+                        _redisClient.HSet(_cacheKeyManager.MessageIdMapping, baseMessage.MessageId, messageId);
                         _redisClient.ZRem(item.DelayQueueName, item.Member);
                         tran.Exec();
                     }
@@ -253,19 +255,19 @@ public class ConsumerBackgroundService : BackgroundService
     {
         return Task.Run(async () =>
         {
-            var serverNodes = await _redisClient.HGetAllAsync<DateTime>(CacheKeys.ServerNodes).ConfigureAwait(false);
+            var serverNodes = await _redisClient.HGetAllAsync<DateTime>(_cacheKeyManager.ServerNodes).ConfigureAwait(false);
             foreach (var node in serverNodes.Where(x => x.Value < DateTime.Now.AddMinutes(-2)))
             {
-                _redisClient.HDel(CacheKeys.ServerNodes, node.Key);
+                _redisClient.HDel(_cacheKeyManager.ServerNodes, node.Key);
             }
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                await _redisClient.HSetAsync(CacheKeys.ServerNodes, _serverName, DateTime.Now).ConfigureAwait(false);
+                await _redisClient.HSetAsync(_cacheKeyManager.ServerNodes, _serverName, DateTime.Now).ConfigureAwait(false);
                 await Task.Delay(20000, stoppingToken).ConfigureAwait(false);
             }
 
-            await _redisClient.HDelAsync(CacheKeys.ServerNodes, _serverName).ConfigureAwait(false);
+            await _redisClient.HDelAsync(_cacheKeyManager.ServerNodes, _serverName).ConfigureAwait(false);
         }, stoppingToken);
     }
 }

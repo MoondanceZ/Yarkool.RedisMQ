@@ -21,6 +21,7 @@ internal static class DashboardBuilderExtension
 
         var provider = app.ApplicationServices;
         var queueConfig = provider.GetService<QueueConfig>();
+        var cacheKeyManager = provider.GetService<CacheKeyManager>()!;
 
         var options = queueConfig?.DashboardOptions;
 
@@ -62,7 +63,7 @@ internal static class DashboardBuilderExtension
                 await httpContext.Response.WriteAsync(htmlBuilder.ToString(), Encoding.UTF8);
             }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
 
-            new RouteActionProvider(endpointRouteBuilder, options).MapDashboardRoutes();
+            new RouteActionProvider(endpointRouteBuilder, options, cacheKeyManager).MapDashboardRoutes();
         }
 
         return app;

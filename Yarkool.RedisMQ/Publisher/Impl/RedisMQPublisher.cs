@@ -5,6 +5,7 @@ namespace Yarkool.RedisMQ
     public class RedisMQPublisher
     (
         QueueConfig queueConfig,
+        CacheKeyManager cacheKeyManager,
         IRedisClient redisClient
     ) : IRedisMQPublisher
     {
@@ -25,16 +26,16 @@ namespace Yarkool.RedisMQ
                 if (string.IsNullOrEmpty(queueName))
                     throw new RedisMQException("queue name cannot be null!");
 
-                queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
+                queueName = cacheKeyManager.ParseCacheKey(queueName);
                 var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
                 var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
                 var messageId = await redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
 
                 var pipe = redisClient.StartPipe();
-                pipe.HSet(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
-                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:Total", 1);
-                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:{time}", 1);
-                pipe.Expire($"{CacheKeys.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                pipe.HSet(cacheKeyManager.MessageIdMapping, baseMessage.MessageId, messageId);
+                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
+                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
+                pipe.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 pipe.EndPipe();
 
                 return baseMessage.MessageId;
@@ -42,9 +43,9 @@ namespace Yarkool.RedisMQ
             catch
             {
                 var pipe = redisClient.StartPipe();
-                pipe.IncrBy($"{CacheKeys.PublishFailed}:Total", 1);
-                pipe.IncrBy($"{CacheKeys.PublishFailed}:{time}", 1);
-                pipe.Expire($"{CacheKeys.PublishFailed}:{time}", TimeSpan.FromHours(30));
+                pipe.IncrBy($"{cacheKeyManager.PublishFailed}:Total", 1);
+                pipe.IncrBy($"{cacheKeyManager.PublishFailed}:{time}", 1);
+                pipe.Expire($"{cacheKeyManager.PublishFailed}:{time}", TimeSpan.FromHours(30));
                 pipe.EndPipe();
                 throw;
             }
@@ -64,7 +65,7 @@ namespace Yarkool.RedisMQ
             {
                 if (string.IsNullOrEmpty(queueName))
                     throw new RedisMQException("queue name cannot be null!");
-                queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
+                queueName = cacheKeyManager.ParseCacheKey(queueName);
 
                 var delaySeconds = delayTime.TotalSeconds;
                 if (delaySeconds <= 0)
@@ -89,10 +90,10 @@ namespace Yarkool.RedisMQ
                 };
                 var pipe = redisClient.StartPipe();
                 pipe.ZAdd(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
-                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:Total", 1);
-                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:{time}", 1);
-                pipe.Expire($"{CacheKeys.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
-                pipe.SAdd(CacheKeys.QueueList, queueName);
+                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
+                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
+                pipe.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                pipe.SAdd(cacheKeyManager.QueueList, queueName);
                 pipe.EndPipe();
 
                 return Task.FromResult(baseMessage.MessageId);
@@ -100,9 +101,9 @@ namespace Yarkool.RedisMQ
             catch
             {
                 var pipe = redisClient.StartPipe();
-                pipe.IncrBy($"{CacheKeys.PublishFailed}:Total", 1);
-                pipe.IncrBy($"{CacheKeys.PublishFailed}:{time}", 1);
-                pipe.Expire($"{CacheKeys.PublishFailed}:{time}", TimeSpan.FromHours(30));
+                pipe.IncrBy($"{cacheKeyManager.PublishFailed}:Total", 1);
+                pipe.IncrBy($"{cacheKeyManager.PublishFailed}:{time}", 1);
+                pipe.Expire($"{cacheKeyManager.PublishFailed}:{time}", TimeSpan.FromHours(30));
                 pipe.EndPipe();
                 throw;
             }
