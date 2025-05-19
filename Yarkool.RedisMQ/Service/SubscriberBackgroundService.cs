@@ -100,6 +100,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             //Execute message
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
 
+                                            await _redisClient.IncrByAsync(CacheKeys.ConsumeSucceeded, 1).ConfigureAwait(false);
                                             if (isAutoAck)
                                             {
                                                 //ACK use tran
@@ -107,6 +108,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 tran.XAck(queueName, groupName, data.id);
                                                 tran.XDel(queueName, data.id);
                                                 tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
+                                                tran.IncrBy(CacheKeys.AckCount, 1);
                                                 tran.Exec();
                                             }
 
@@ -116,6 +118,7 @@ public class ConsumerBackgroundService : BackgroundService
                                         {
                                             try
                                             {
+                                                await _redisClient.IncrByAsync(CacheKeys.ConsumeFailed, 1).ConfigureAwait(false);
                                                 //Execute message
                                                 if (onErrorAsyncMethodInvoker != null)
                                                 {

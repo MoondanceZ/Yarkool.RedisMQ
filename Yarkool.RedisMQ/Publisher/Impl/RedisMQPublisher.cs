@@ -19,16 +19,25 @@ namespace Yarkool.RedisMQ
         /// <returns></returns>
         public async Task<string> PublishMessageAsync(string queueName, object? message)
         {
-            if (string.IsNullOrEmpty(queueName))
-                throw new RedisMQException("queue name cannot be null!");
+            try
+            {
+                if (string.IsNullOrEmpty(queueName))
+                    throw new RedisMQException("queue name cannot be null!");
 
-            queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
-            var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
-            var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
-            var messageId = await redisClient.XAddAsync(queueName, data);
-            await redisClient.HSetAsync(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
+                queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
+                var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
+                var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
+                var messageId = await redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
+                await redisClient.HSetAsync(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId).ConfigureAwait(false);
+                await redisClient.IncrByAsync(CacheKeys.PublishSucceeded, 1).ConfigureAwait(false);
 
-            return baseMessage.MessageId;
+                return baseMessage.MessageId;
+            }
+            catch
+            {
+                await redisClient.IncrByAsync(CacheKeys.PublishFailed, 1).ConfigureAwait(false);
+                throw;
+            }
         }
 
         /// <summary>
@@ -40,35 +49,44 @@ namespace Yarkool.RedisMQ
         /// <returns></returns>
         public async Task<string> PublishMessageAsync(string queueName, object? message, TimeSpan delayTime)
         {
-            if (string.IsNullOrEmpty(queueName))
-                throw new RedisMQException("queue name cannot be null!");
-            queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
-
-            var delaySeconds = delayTime.TotalSeconds;
-            if (delaySeconds <= 0)
-                throw new RedisMQException("delay time cannot be <= 0s !");
-            var score = TimeHelper.GetMillisecondTimestamp() + (delaySeconds * 1000);
-            var delayTimeSortedSetName = $"{queueName}:DelayTimeType";
-            var delayQueueName = $"{delayTimeSortedSetName}:{delaySeconds}";
-
-            lock (_lock)
+            try
             {
-                if (!_delaySecondsList.Contains(delaySeconds))
+                if (string.IsNullOrEmpty(queueName))
+                    throw new RedisMQException("queue name cannot be null!");
+                queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
+
+                var delaySeconds = delayTime.TotalSeconds;
+                if (delaySeconds <= 0)
+                    throw new RedisMQException("delay time cannot be <= 0s !");
+                var score = TimeHelper.GetMillisecondTimestamp() + (delaySeconds * 1000);
+                var delayTimeSortedSetName = $"{queueName}:DelayTimeType";
+                var delayQueueName = $"{delayTimeSortedSetName}:{delaySeconds}";
+
+                lock (_lock)
                 {
-                    redisClient.SAdd(delayTimeSortedSetName, delaySeconds);
-                    _delaySecondsList.Add(delaySeconds);
+                    if (!_delaySecondsList.Contains(delaySeconds))
+                    {
+                        redisClient.SAdd(delayTimeSortedSetName, delaySeconds);
+                        _delaySecondsList.Add(delaySeconds);
+                    }
                 }
+
+                var baseMessage = new BaseMessage
+                {
+                    MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message),
+                    DelayTime = delaySeconds
+                };
+
+                await redisClient.ZAddAsync(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
+                await redisClient.IncrByAsync(CacheKeys.PublishSucceeded, 1).ConfigureAwait(false);
+
+                return baseMessage.MessageId;
             }
-
-            var baseMessage = new BaseMessage
+            catch
             {
-                MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message),
-                DelayTime = delaySeconds
-            };
-
-            await redisClient.ZAddAsync(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
-
-            return baseMessage.MessageId;
+                await redisClient.IncrByAsync(CacheKeys.PublishFailed, 1).ConfigureAwait(false);
+                throw;
+            }
         }
     }
 }

@@ -24,10 +24,11 @@ public class ConsumerMessageHandler
         {
             var streamMessageId = await redisClient.HGetAsync(CacheKeys.MessageIdMapping, MessageId).ConfigureAwait(false);
 
-            using var tran = redisClient!.Multi();
+            using var tran = redisClient.Multi();
             tran.XAck(queueName, groupName, streamMessageId);
             tran.XDel(queueName, streamMessageId);
             tran.HDel(CacheKeys.MessageIdMapping, MessageId);
+            tran.IncrBy(CacheKeys.AckCount, 1);
             tran.Exec();
         }
     }
@@ -51,12 +52,13 @@ public class ConsumerMessageHandler
 
         if (streamMessageIdDic.Any())
         {
-            using var tran = redisClient!.Multi();
+            using var tran = redisClient.Multi();
             foreach (var item in streamMessageIdDic)
             {
                 tran.XAck(queueName, groupName, item.Value);
                 tran.XDel(queueName, item.Value);
                 tran.HDel(CacheKeys.MessageIdMapping, item.Key);
+                tran.IncrBy(CacheKeys.AckCount, 1);
             }
 
             tran.Exec();
