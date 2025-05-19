@@ -2,14 +2,14 @@
 
 namespace RedisMQ.Api
 {
-    [RedisMQConsumer("Test", ConsumerCount = 1, PendingTimeOut = 10, PrefetchCount = 100, IsAutoAck = false)]
+    [RedisMQConsumer("Test", ConsumerCount = 1, PendingTimeOut = 300, PrefetchCount = 100, IsAutoAck = false)]
     public class TestConsumer : RedisMQConsumer<TestMessage>
     {
         public override async Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)
         {
             Console.WriteLine(message.Input);
             // throw new Exception("出错啦");
-            await Task.Delay(Random.Shared.Next(10, 300), cancellationToken);
+            await Task.Delay(Random.Shared.Next(10, 100), cancellationToken);
 
             // IsAutoAck = false, manual ack
             await messageHandler.AckAsync(cancellationToken);
