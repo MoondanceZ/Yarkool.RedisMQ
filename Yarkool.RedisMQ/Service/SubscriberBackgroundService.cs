@@ -102,16 +102,18 @@ public class ConsumerBackgroundService : BackgroundService
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
 
                                             using var tran = _redisClient.Multi();
-                                            tran.IncrBy(CacheKeys.TotalConsumeSucceeded, 1);
+                                            tran.IncrBy($"{CacheKeys.ConsumeSucceeded}:Total", 1);
                                             tran.IncrBy($"{CacheKeys.ConsumeSucceeded}:{time}", 1);
+                                            tran.Expire($"{CacheKeys.ConsumeSucceeded}:{time}", TimeSpan.FromHours(30));
                                             if (isAutoAck)
                                             {
                                                 //ACK
                                                 tran.XAck(queueName, groupName, data.id);
                                                 tran.XDel(queueName, data.id);
                                                 tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
-                                                tran.IncrBy(CacheKeys.TotalAckCount, 1);
+                                                tran.IncrBy($"{CacheKeys.AckCount}:Total", 1);
                                                 tran.IncrBy($"{CacheKeys.AckCount}:{time}", 1);
+                                                tran.Expire($"{CacheKeys.AckCount}:{time}", TimeSpan.FromHours(30));
                                             }
                                             tran.Exec();
 
@@ -122,8 +124,9 @@ public class ConsumerBackgroundService : BackgroundService
                                             try
                                             {
                                                 using var pipe = _redisClient.StartPipe();
-                                                pipe.IncrBy(CacheKeys.TotalConsumeFailed, 1);
+                                                pipe.IncrBy($"{CacheKeys.ConsumeFailed}:Total", 1);
                                                 pipe.IncrBy($"{CacheKeys.ConsumeFailed}:{time}", 1);
+                                                pipe.Expire($"{CacheKeys.ConsumeFailed}:{time}", TimeSpan.FromHours(30));
                                                 pipe.EndPipe();
 
                                                 //Execute message

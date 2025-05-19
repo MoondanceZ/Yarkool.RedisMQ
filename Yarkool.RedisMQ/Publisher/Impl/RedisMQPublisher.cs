@@ -19,25 +19,33 @@ namespace Yarkool.RedisMQ
         /// <returns></returns>
         public async Task<string> PublishMessageAsync(string queueName, object? message)
         {
+            var time = DateTime.Now.ToString("yyyyMMddHH00");
             try
             {
                 if (string.IsNullOrEmpty(queueName))
                     throw new RedisMQException("queue name cannot be null!");
 
                 queueName = string.IsNullOrEmpty(queueConfig.RedisPrefix) ? queueName : $"{queueConfig.RedisPrefix}{queueName}";
-                var time = DateTime.Now.ToString("yyyyMMddHH00");
                 var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
                 var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
                 var messageId = await redisClient.XAddAsync(queueName, data).ConfigureAwait(false);
-                await redisClient.HSetAsync(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId).ConfigureAwait(false);
-                await redisClient.IncrByAsync(CacheKeys.TotalPublishSucceeded, 1).ConfigureAwait(false);
-                await redisClient.IncrByAsync($"{CacheKeys.PublishSucceeded}:{time}", 1).ConfigureAwait(false);
+
+                var pipe = redisClient.StartPipe();
+                pipe.HSet(CacheKeys.MessageIdMapping, baseMessage.MessageId, messageId);
+                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:Total", 1);
+                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:{time}", 1);
+                pipe.Expire($"{CacheKeys.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                pipe.EndPipe();
 
                 return baseMessage.MessageId;
             }
             catch
             {
-                await redisClient.IncrByAsync(CacheKeys.TotalPublishFailed, 1).ConfigureAwait(false);
+                var pipe = redisClient.StartPipe();
+                pipe.IncrBy($"{CacheKeys.PublishFailed}:Total", 1);
+                pipe.IncrBy($"{CacheKeys.PublishFailed}:{time}", 1);
+                pipe.Expire($"{CacheKeys.PublishFailed}:{time}", TimeSpan.FromHours(30));
+                pipe.EndPipe();
                 throw;
             }
         }
@@ -49,8 +57,9 @@ namespace Yarkool.RedisMQ
         /// <param name="message"></param>
         /// <param name="delayTime"></param>
         /// <returns></returns>
-        public async Task<string> PublishMessageAsync(string queueName, object? message, TimeSpan delayTime)
+        public Task<string> PublishMessageAsync(string queueName, object? message, TimeSpan delayTime)
         {
+            var time = DateTime.Now.ToString("yyyyMMddHH00");
             try
             {
                 if (string.IsNullOrEmpty(queueName))
@@ -68,7 +77,7 @@ namespace Yarkool.RedisMQ
                 {
                     if (!_delaySecondsList.Contains(delaySeconds))
                     {
-                        redisClient.SAdd(delayTimeSortedSetName, delaySeconds);
+                        redisClient.SAddAsync(delayTimeSortedSetName, delaySeconds);
                         _delaySecondsList.Add(delaySeconds);
                     }
                 }
@@ -78,17 +87,22 @@ namespace Yarkool.RedisMQ
                     MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message),
                     DelayTime = delaySeconds
                 };
+                var pipe = redisClient.StartPipe();
+                pipe.ZAdd(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
+                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:Total", 1);
+                pipe.IncrBy($"{CacheKeys.PublishSucceeded}:{time}", 1);
+                pipe.Expire($"{CacheKeys.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                pipe.EndPipe();
 
-                var time = DateTime.Now.ToString("yyyyMMddHH00");
-                await redisClient.ZAddAsync(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
-                await redisClient.IncrByAsync(CacheKeys.TotalPublishSucceeded, 1).ConfigureAwait(false);
-                await redisClient.IncrByAsync($"{CacheKeys.PublishSucceeded}:{time}", 1).ConfigureAwait(false);
-
-                return baseMessage.MessageId;
+                return Task.FromResult(baseMessage.MessageId);
             }
             catch
             {
-                await redisClient.IncrByAsync(CacheKeys.TotalPublishFailed, 1).ConfigureAwait(false);
+                var pipe = redisClient.StartPipe();
+                pipe.IncrBy($"{CacheKeys.PublishFailed}:Total", 1);
+                pipe.IncrBy($"{CacheKeys.PublishFailed}:{time}", 1);
+                pipe.Expire($"{CacheKeys.PublishFailed}:{time}", TimeSpan.FromHours(30));
+                pipe.EndPipe();
                 throw;
             }
         }
