@@ -88,6 +88,7 @@ public class ConsumerBackgroundService : BackgroundService
                                     foreach (var data in entryResultEntries)
                                     {
                                         var messageHandler = new ConsumerMessageHandler(queueName, groupName, _redisClient);
+                                        var time = DateTime.Now.ToString("yyyyMMddHH00");
                                         try
                                         {
                                             var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
@@ -100,17 +101,19 @@ public class ConsumerBackgroundService : BackgroundService
                                             //Execute message
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
 
-                                            await _redisClient.IncrByAsync(CacheKeys.ConsumeSucceeded, 1).ConfigureAwait(false);
+                                            using var tran = _redisClient.Multi();
+                                            tran.IncrBy(CacheKeys.TotalConsumeSucceeded, 1);
+                                            tran.IncrBy($"{CacheKeys.ConsumeSucceeded}:{time}", 1);
                                             if (isAutoAck)
                                             {
-                                                //ACK use tran
-                                                using var tran = _redisClient.Multi();
+                                                //ACK
                                                 tran.XAck(queueName, groupName, data.id);
                                                 tran.XDel(queueName, data.id);
                                                 tran.HDel(CacheKeys.MessageIdMapping, message.MessageId);
-                                                tran.IncrBy(CacheKeys.AckCount, 1);
-                                                tran.Exec();
+                                                tran.IncrBy(CacheKeys.TotalAckCount, 1);
+                                                tran.IncrBy($"{CacheKeys.AckCount}:{time}", 1);
                                             }
+                                            tran.Exec();
 
                                             // _logger?.LogInformation($"{consumerName}_{consumerIndex} consume {message.MessageContent} successfully");
                                         }
@@ -118,7 +121,11 @@ public class ConsumerBackgroundService : BackgroundService
                                         {
                                             try
                                             {
-                                                await _redisClient.IncrByAsync(CacheKeys.ConsumeFailed, 1).ConfigureAwait(false);
+                                                using var pipe = _redisClient.StartPipe();
+                                                pipe.IncrBy(CacheKeys.TotalConsumeFailed, 1);
+                                                pipe.IncrBy($"{CacheKeys.ConsumeFailed}:{time}", 1);
+                                                pipe.EndPipe();
+
                                                 //Execute message
                                                 if (onErrorAsyncMethodInvoker != null)
                                                 {

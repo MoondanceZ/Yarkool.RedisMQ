@@ -23,12 +23,14 @@ public class ConsumerMessageHandler
         if (!string.IsNullOrEmpty(MessageId))
         {
             var streamMessageId = await redisClient.HGetAsync(CacheKeys.MessageIdMapping, MessageId).ConfigureAwait(false);
+            var time = DateTime.Now.ToString("yyyyMMddHH00");
 
             using var tran = redisClient.Multi();
             tran.XAck(queueName, groupName, streamMessageId);
             tran.XDel(queueName, streamMessageId);
             tran.HDel(CacheKeys.MessageIdMapping, MessageId);
-            tran.IncrBy(CacheKeys.AckCount, 1);
+            tran.IncrBy(CacheKeys.TotalAckCount, 1);
+            tran.IncrBy($"{CacheKeys.AckCount}:{time}", 1);
             tran.Exec();
         }
     }
