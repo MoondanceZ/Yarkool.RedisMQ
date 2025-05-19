@@ -36,7 +36,7 @@ namespace Yarkool.RedisMQ
                 pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
                 pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
                 pipe.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
-                pipe.SAdd(cacheKeyManager.QueueList, queueName);
+                pipe.SAdd(cacheKeyManager.CommonQueueList, queueName);
                 pipe.EndPipe();
 
                 return baseMessage.MessageId;
@@ -94,7 +94,8 @@ namespace Yarkool.RedisMQ
                 pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
                 pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
                 pipe.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
-                pipe.SAdd(cacheKeyManager.QueueList, queueName);
+                pipe.SAdd(cacheKeyManager.DelayQueueList, queueName);
+                pipe.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
                 pipe.EndPipe();
 
                 return Task.FromResult(baseMessage.MessageId);

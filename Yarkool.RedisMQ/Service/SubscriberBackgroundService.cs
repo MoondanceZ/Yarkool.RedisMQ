@@ -258,29 +258,30 @@ public class ConsumerBackgroundService : BackgroundService
     {
         return Task.Run(async () =>
         {
-            var serverNodes = await _redisClient.HGetAllAsync<DateTime>(_cacheKeyManager.ServerNodes).ConfigureAwait(false);
-            var expireNodes = serverNodes.Where(x => x.Value < DateTime.Now.AddMinutes(-2));
-            if (expireNodes.Any())
-            {
-                var consumerList = _redisClient.SMembers<string>(_cacheKeyManager.ConsumerList);
-                foreach (var node in expireNodes)
-                {
-                    _redisClient.HDel(_cacheKeyManager.ServerNodes, node.Key);
-                    var expireConsumerList = consumerList.Where(x => x.StartsWith($"{node.Key}:"));
-                    if (expireConsumerList.Any())
-                    {
-                        _redisClient.SRem(_cacheKeyManager.ConsumerList, expireConsumerList);
-                    }
-                }
-            }
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 await _redisClient.HSetAsync(_cacheKeyManager.ServerNodes, _serverName, DateTime.Now).ConfigureAwait(false);
+
+                var serverNodes = await _redisClient.HGetAllAsync<DateTime>(_cacheKeyManager.ServerNodes).ConfigureAwait(false);
+                var expireNodes = serverNodes.Where(x => x.Value < DateTime.Now.AddMinutes(-2));
+                var consumerList = await _redisClient.SMembersAsync(_cacheKeyManager.ConsumerList).ConfigureAwait(false);
+                var expireConsumerList = consumerList.Where(x => !serverNodes.Any(s => x.StartsWith($"{s.Key}:"))).ToList();
+                if (expireNodes.Any())
+                {
+                    foreach (var node in expireNodes)
+                    {
+                        _redisClient.HDel(_cacheKeyManager.ServerNodes, node.Key);
+                        expireConsumerList.AddRange(consumerList.Where(x => x.StartsWith($"{node.Key}:")));
+                    }
+                }
+
+                if (expireConsumerList.Any())
+                {
+                    await _redisClient.SRemAsync(_cacheKeyManager.ConsumerList, expireConsumerList.Select(x => (object)x).ToArray()).ConfigureAwait(false);
+                }
+
                 await Task.Delay(20000, stoppingToken).ConfigureAwait(false);
             }
-
-            await _redisClient.HDelAsync(_cacheKeyManager.ServerNodes, _serverName).ConfigureAwait(false);
         }, stoppingToken);
     }
 }

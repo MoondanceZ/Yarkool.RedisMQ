@@ -47,6 +47,11 @@ internal class StatsResponse
             public long AckCount { get; set; }
 
             /// <summary>
+            /// PendingCount
+            /// </summary>
+            public long PendingCount { get; set; }
+
+            /// <summary>
             /// ErrorQueueLength
             /// </summary>
             public long ErrorQueueLength { get; set; }

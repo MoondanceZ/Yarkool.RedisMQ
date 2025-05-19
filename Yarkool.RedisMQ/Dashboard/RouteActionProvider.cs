@@ -64,9 +64,16 @@ internal class RouteActionProvider
         realTimePipe.Get<long>($"{cacheKeyManager.PublishSucceeded}:Total"); //3
         realTimePipe.Get<long>($"{cacheKeyManager.AckCount}:Total"); //4
         realTimePipe.XLen(cacheKeyManager.ParseCacheKey(queueConfig.ErrorQueueOptions?.QueueName ?? "")); //5
-        realTimePipe.SCard(cacheKeyManager.QueueList); //6
-        realTimePipe.SCard(cacheKeyManager.ConsumerList); //7
+        realTimePipe.SCard(cacheKeyManager.CommonQueueList); //6
+        realTimePipe.SCard(cacheKeyManager.DelayQueueList); //7
+        realTimePipe.SCard(cacheKeyManager.ConsumerList); //8
+        realTimePipe.HLen(cacheKeyManager.ServerNodes); //9
         var realTimeResults = realTimePipe.EndPipe();
+
+        var commonQueueList = redisClient.SMembers(cacheKeyManager.CommonQueueList);
+        var delayQueueNameList = redisClient.SMembers(cacheKeyManager.DelayQueueNameList);
+        var pendingCount = commonQueueList.Select(x => redisClient.XLen(cacheKeyManager.ParseCacheKey(x))).Sum() +
+            delayQueueNameList.Select(x => redisClient.ZCard(x)).Sum();
 
         var result = new StatsResponse
         {
@@ -77,15 +84,16 @@ internal class RouteActionProvider
                 PublishFailed = (long)realTimeResults[2],
                 PublishSucceeded = (long)realTimeResults[3],
                 AckCount = (long)realTimeResults[4],
-                ErrorQueueLength = (long)realTimeResults[5]
+                ErrorQueueLength = (long)realTimeResults[5],
+                PendingCount = pendingCount
             },
             TwentyFourHoursStats = twentyFourHoursStatsList,
             ServerInfo = new StatsResponse.Types.ServerInfo
             {
                 MessageCount = (long)realTimeResults[3],
-                QueueCount = (long)realTimeResults[6],
-                ConsumerCount = (long)realTimeResults[7],
-                ServerCount = redisClient.HGetAll<DateTime>(cacheKeyManager.ServerNodes).Count(x => x.Value > now.AddMinutes(-2))
+                QueueCount = (long)realTimeResults[6] + (long)realTimeResults[7],
+                ConsumerCount = (long)realTimeResults[8],
+                ServerCount = (long)realTimeResults[9]
             }
         };
 

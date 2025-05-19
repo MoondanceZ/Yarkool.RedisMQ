@@ -2,7 +2,7 @@
 
 namespace RedisMQ.Api;
 
-[RedisMQConsumer("Delay", ConsumerCount = 1, PendingTimeOut = 10, IsDelayQueueConsumer = true)]
+[RedisMQConsumer("Delay", ConsumerCount = 1, PendingTimeOut = 200, IsDelayQueueConsumer = true)]
 public class DelayConsumer(ILogger<DelayConsumer> logger) : RedisMQConsumer<TestMessage>
 {
     public override Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)
