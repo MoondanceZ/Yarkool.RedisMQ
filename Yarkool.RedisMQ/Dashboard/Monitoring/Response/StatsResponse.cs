@@ -70,22 +70,22 @@ internal class StatsResponse
             /// <summary>
             /// QueueCount
             /// </summary>
-            public int QueueCount { get; set; }
+            public long QueueCount { get; set; }
 
             /// <summary>
             /// ConsumerCount
             /// </summary>
-            public int ConsumerCount { get; set; }
+            public long ConsumerCount { get; set; }
 
             /// <summary>
             /// ServerCount
             /// </summary>
-            public int ServerCount { get; set; }
+            public long ServerCount { get; set; }
 
             /// <summary>
             /// MessageCount
             /// </summary>
-            public int MessageCount { get; set; }
+            public long MessageCount { get; set; }
         }
     }
 }

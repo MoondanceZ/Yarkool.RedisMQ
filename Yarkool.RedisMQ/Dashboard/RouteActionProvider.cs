@@ -25,19 +25,27 @@ internal class RouteActionProvider
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
         var queueConfig = _serviceProvider.GetService<QueueConfig>()!;
-        
+
         var twentyFourHoursStatsList = new List<StatsResponse.Types.TwentyFourHoursStatsInfo>();
         var now = DateTime.Now;
         for (int i = 0; i < 24; i++)
         {
             var time = now.AddHours(-i).ToString("yyyyMMddHH");
+            var twentyFourHoursPipe = redisClient.StartPipe();
+            twentyFourHoursPipe.Get<long>($"{CacheKeys.ConsumeFailed}:{time}");
+            twentyFourHoursPipe.Get<long>($"{CacheKeys.ConsumeSucceeded}:{time}");
+            twentyFourHoursPipe.Get<long>($"{CacheKeys.PublishFailed}:{time}");
+            twentyFourHoursPipe.Get<long>($"{CacheKeys.PublishSucceeded}:{time}");
+            twentyFourHoursPipe.Get<long>($"{CacheKeys.AckCount}:{time}");
+            var twentyFourHoursResults = twentyFourHoursPipe.EndPipe();
+
             var statsInfo = new StatsResponse.Types.StatsInfo
             {
-                ConsumeFailed = redisClient.Get<long>($"{CacheKeys.ConsumeFailed}:{time}"),
-                ConsumeSucceeded = redisClient.Get<long>($"{CacheKeys.ConsumeSucceeded}:{time}"),
-                PublishFailed = redisClient.Get<long>($"{CacheKeys.PublishFailed}:{time}"),
-                PublishSucceeded = redisClient.Get<long>($"{CacheKeys.PublishSucceeded}:{time}"),
-                AckCount = redisClient.Get<long>($"{CacheKeys.AckCount}:{time}")
+                ConsumeFailed = (long)twentyFourHoursResults[0],
+                ConsumeSucceeded = (long)twentyFourHoursResults[1],
+                PublishFailed = (long)twentyFourHoursResults[2],
+                PublishSucceeded = (long)twentyFourHoursResults[3],
+                AckCount = (long)twentyFourHoursResults[4]
             };
             twentyFourHoursStatsList.Add(new StatsResponse.Types.TwentyFourHoursStatsInfo
             {
@@ -45,31 +53,43 @@ internal class RouteActionProvider
                 Stats = statsInfo
             });
         }
+
         twentyFourHoursStatsList.Reverse();
-        
+
+        var realTimePipe = redisClient.StartPipe();
+        realTimePipe.Get<long>($"{CacheKeys.ConsumeFailed}:Total"); //0
+        realTimePipe.Get<long>($"{CacheKeys.ConsumeSucceeded}:Total"); //1
+        realTimePipe.Get<long>($"{CacheKeys.PublishFailed}:Total"); //2
+        realTimePipe.Get<long>($"{CacheKeys.PublishSucceeded}:Total"); //3
+        realTimePipe.Get<long>($"{CacheKeys.AckCount}:Total"); //4
+        realTimePipe.XLen(queueConfig.ErrorQueueOptions?.QueueName); //5
+        realTimePipe.SCard(CacheKeys.QueueList); //6
+        realTimePipe.SCard(CacheKeys.ConsumerList); //7
+        var realTimeResults = realTimePipe.EndPipe();
+
         var result = new StatsResponse
         {
             RealTimeStats = new StatsResponse.Types.StatsInfo
             {
-                ConsumeFailed = redisClient.Get<long>($"{CacheKeys.ConsumeFailed}:Total"),
-                ConsumeSucceeded = redisClient.Get<long>($"{CacheKeys.ConsumeSucceeded}:Total"),
-                PublishFailed = redisClient.Get<long>($"{CacheKeys.PublishFailed}:Total"),
-                PublishSucceeded = redisClient.Get<long>($"{CacheKeys.PublishSucceeded}:Total"),
-                AckCount = redisClient.Get<long>($"{CacheKeys.AckCount}:Total"),
-                ErrorQueueLength = !string.IsNullOrEmpty(queueConfig.ErrorQueueOptions?.QueueName) ? redisClient.XLen(queueConfig.ErrorQueueOptions?.QueueName) : 0
+                ConsumeFailed = (long)realTimeResults[0],
+                ConsumeSucceeded = (long)realTimeResults[1],
+                PublishFailed = (long)realTimeResults[2],
+                PublishSucceeded = (long)realTimeResults[3],
+                AckCount = (long)realTimeResults[4],
+                ErrorQueueLength = (long)realTimeResults[5]
             },
             TwentyFourHoursStats = twentyFourHoursStatsList,
             ServerInfo = new StatsResponse.Types.ServerInfo
             {
-                ConsumerCount = 0,
-                QueueCount = 0,
-                ServerCount = 0
+                MessageCount = (long)realTimeResults[3],
+                QueueCount = (long)realTimeResults[6],
+                ConsumerCount = (long)realTimeResults[7],
+                ServerCount = redisClient.HGetAll<DateTime>(CacheKeys.ServerNodes).Count(x => x.Value > now.AddMinutes(-2)),
             }
         };
 
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
     }
-
 
     public Task Health(HttpContext httpContext)
     {

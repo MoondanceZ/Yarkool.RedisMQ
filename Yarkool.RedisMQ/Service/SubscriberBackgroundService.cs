@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using FreeRedis;
@@ -45,6 +46,8 @@ public class ConsumerBackgroundService : BackgroundService
         }
     }
 
+    private string _serverName = $"{Environment.MachineName}:{Process.GetCurrentProcess().Id}";
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
@@ -69,6 +72,7 @@ public class ConsumerBackgroundService : BackgroundService
             {
                 var consumerIndex = i + 1;
                 var curConsumerName = $"{consumerName}_{consumerIndex}";
+                _redisClient.SAdd(CacheKeys.ConsumerList, curConsumerName);
                 Task.Run(async () =>
                 {
                     _logger?.LogInformation($"{consumerName.Replace(_queueConfig.RedisPrefix ?? "", "")}_{consumerIndex} subscribing");
@@ -115,6 +119,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                 tran.IncrBy($"{CacheKeys.AckCount}:{time}", 1);
                                                 tran.Expire($"{CacheKeys.AckCount}:{time}", TimeSpan.FromHours(30));
                                             }
+
                                             tran.Exec();
 
                                             // _logger?.LogInformation($"{consumerName}_{consumerIndex} consume {message.MessageContent} successfully");
@@ -191,6 +196,7 @@ public class ConsumerBackgroundService : BackgroundService
 
     private async Task ExecuteDelayQueuePollingAsync(ConsumerExecutorDescriptor consumerExecutorDescriptor, CancellationToken stoppingToken)
     {
+        _ = RunLiveServerAsync(stoppingToken);
         var queueName = consumerExecutorDescriptor.QueueName;
         var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
         while (!stoppingToken.IsCancellationRequested)
@@ -229,17 +235,37 @@ public class ConsumerBackgroundService : BackgroundService
                         tran.Exec();
                     }
 
-                    await Task.Delay(1000, stoppingToken);
+                    await Task.Delay(1000, stoppingToken).ConfigureAwait(false);
                 }
                 else
                 {
-                    await Task.Delay(3000, stoppingToken);
+                    await Task.Delay(3000, stoppingToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                await Task.Delay(5000, stoppingToken);
+                await Task.Delay(5000, stoppingToken).ConfigureAwait(false);
             }
         }
+    }
+
+    private Task RunLiveServerAsync(CancellationToken stoppingToken)
+    {
+        return Task.Run(async () =>
+        {
+            var serverNodes = await _redisClient.HGetAllAsync<DateTime>(CacheKeys.ServerNodes).ConfigureAwait(false);
+            foreach (var node in serverNodes.Where(x => x.Value < DateTime.Now.AddMinutes(-2)))
+            {
+                _redisClient.HDel(CacheKeys.ServerNodes, node.Key);
+            }
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await _redisClient.HSetAsync(CacheKeys.ServerNodes, _serverName, DateTime.Now).ConfigureAwait(false);
+                await Task.Delay(20000, stoppingToken).ConfigureAwait(false);
+            }
+
+            await _redisClient.HDelAsync(CacheKeys.ServerNodes, _serverName).ConfigureAwait(false);
+        }, stoppingToken);
     }
 }

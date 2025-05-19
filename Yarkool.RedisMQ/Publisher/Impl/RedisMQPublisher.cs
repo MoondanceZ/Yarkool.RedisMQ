@@ -92,6 +92,7 @@ namespace Yarkool.RedisMQ
                 pipe.IncrBy($"{CacheKeys.PublishSucceeded}:Total", 1);
                 pipe.IncrBy($"{CacheKeys.PublishSucceeded}:{time}", 1);
                 pipe.Expire($"{CacheKeys.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                pipe.SAdd(CacheKeys.QueueList, queueName);
                 pipe.EndPipe();
 
                 return Task.FromResult(baseMessage.MessageId);

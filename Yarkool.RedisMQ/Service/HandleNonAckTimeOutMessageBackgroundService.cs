@@ -107,7 +107,7 @@ namespace Yarkool.RedisMQ
                                 }
                                 else
                                 {
-                                    await Task.Delay(5000, stoppingToken);
+                                    await Task.Delay(5000, stoppingToken).ConfigureAwait(false);
                                 }
                             }
                             catch (Exception ex)
