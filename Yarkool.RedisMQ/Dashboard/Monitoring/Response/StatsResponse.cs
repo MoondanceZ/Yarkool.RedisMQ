@@ -52,9 +52,24 @@ internal class StatsResponse
             public long PendingCount { get; set; }
 
             /// <summary>
-            /// ErrorQueueLength
+            /// ProcessingCount
             /// </summary>
-            public long ErrorQueueLength { get; set; }
+            public long ProcessingCount { get; set; }
+
+            /// <summary>
+            /// RetryingCount
+            /// </summary>
+            public long RetryingCount { get; set; }
+
+            /// <summary>
+            /// CompletedCount
+            /// </summary>
+            public long CompletedCount { get; set; }
+
+            /// <summary>
+            /// FailedCount
+            /// </summary>
+            public long FailedCount { get; set; }
         }
 
         public class TwentyFourHoursStatsInfo

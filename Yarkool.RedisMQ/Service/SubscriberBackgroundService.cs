@@ -15,16 +15,14 @@ public class ConsumerBackgroundService : BackgroundService
     private readonly QueueConfig _queueConfig;
     private readonly CacheKeyManager _cacheKeyManager;
     private readonly IRedisClient _redisClient;
-    private readonly IRedisMQPublisher _publisher;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ConsumerBackgroundService> _logger;
 
-    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, CacheKeyManager cacheKeyManager, IRedisClient redisClient, IRedisMQPublisher publisher, IServiceProvider serviceProvider, ILogger<ConsumerBackgroundService> logger)
+    public ConsumerBackgroundService(ConsumerServiceSelector consumerServiceSelector, QueueConfig queueConfig, CacheKeyManager cacheKeyManager, IRedisClient redisClient, IServiceProvider serviceProvider, ILogger<ConsumerBackgroundService> logger)
     {
         _consumerServiceSelector = consumerServiceSelector;
         _queueConfig = queueConfig;
         _redisClient = redisClient;
-        _publisher = publisher;
         _serviceProvider = serviceProvider;
         _cacheKeyManager = cacheKeyManager;
         _logger = logger;
@@ -65,7 +63,7 @@ public class ConsumerBackgroundService : BackgroundService
             var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
             var isAutoAck = consumerExecutorDescriptor.IsAutoAck;
             var onMessageAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnMessageAsync))!;
-            var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod)!;
+            var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod);
             var onErrorAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnErrorAsync));
             var onErrorAsyncMethodInvoker = onErrorAsyncMethod == null ? null : MethodInvoker.Create(onErrorAsyncMethod);
             var queueNameKey = _cacheKeyManager.ParseCacheKey(queueName);
@@ -80,7 +78,7 @@ public class ConsumerBackgroundService : BackgroundService
                 _redisClient.SAdd(_cacheKeyManager.ConsumerList, $"{_serverName}:{curConsumerName}");
                 Task.Run(async () =>
                 {
-                    _logger?.LogInformation($"{curConsumerName} subscribing");
+                    _logger.LogInformation($"{curConsumerName} subscribing");
                     while (!stoppingToken.IsCancellationRequested)
                     {
                         var message = default(BaseMessage);
@@ -107,6 +105,12 @@ public class ConsumerBackgroundService : BackgroundService
                                             // _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
                                             messageContent = string.IsNullOrEmpty(message.MessageContent) ? null : _queueConfig.Serializer.Deserialize(message.MessageContent, messageType);
 
+                                            using var pipe = _redisClient.StartPipe();
+                                            pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
+                                            pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Processing.ToString());
+                                            pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
+                                            pipe.EndPipe();
+
                                             //Execute message
                                             await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
 
@@ -114,13 +118,17 @@ public class ConsumerBackgroundService : BackgroundService
                                             tran.IncrBy($"{_cacheKeyManager.ConsumeSucceeded}:Total", 1);
                                             tran.IncrBy($"{_cacheKeyManager.ConsumeSucceeded}:{time}", 1);
                                             tran.Expire($"{_cacheKeyManager.ConsumeSucceeded}:{time}", TimeSpan.FromHours(30));
-                                            tran.HDel(_cacheKeyManager.MessageIdErrorInfo, message.MessageId);
+                                            tran.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Completed.ToString());
+                                            tran.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
+                                            tran.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
+                                            tran.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), message.MessageId);
+                                            tran.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
+                                            tran.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), message.MessageId);
                                             if (isAutoAck)
                                             {
                                                 //ACK
                                                 tran.XAck(queueNameKey, groupName, data.id);
                                                 tran.XDel(queueNameKey, data.id);
-                                                tran.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
                                                 tran.IncrBy($"{_cacheKeyManager.AckCount}:Total", 1);
                                                 tran.IncrBy($"{_cacheKeyManager.AckCount}:{time}", 1);
                                                 tran.Expire($"{_cacheKeyManager.AckCount}:{time}", TimeSpan.FromHours(30));
@@ -145,7 +153,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             {
                                                 _logger?.LogError(new RedisMQDataException("Handle error exception!", message, errorEx), "Handle error exception!");
                                             }
-                                            
+
                                             try
                                             {
                                                 using var pipe = _redisClient.StartPipe();
@@ -155,9 +163,12 @@ public class ConsumerBackgroundService : BackgroundService
 
                                                 if (message != null)
                                                 {
+                                                    pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
+                                                    pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), message.MessageId);
+
                                                     //超出重试次数, 从原来的队列中删除, 并加入到异常列表
                                                     var messageErrorInfo = default(MessageErrorInfo);
-                                                    var errorInfoStr = _redisClient.HGet<string>(_cacheKeyManager.MessageIdErrorInfo, message.MessageId);
+                                                    var errorInfoStr = _redisClient.HGet<string>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo");
                                                     if (errorInfoStr != null)
                                                     {
                                                         messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
@@ -183,13 +194,13 @@ public class ConsumerBackgroundService : BackgroundService
                                                     {
                                                         pipe.XAck(queueNameKey, groupName, data.id);
                                                         pipe.XDel(queueNameKey, data.id);
-                                                        pipe.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
-                                                        pipe.ZAdd(_cacheKeyManager.ErrorMessageList, TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
-                                                        pipe.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, 0, (-_queueConfig.ErrorListSize - 1));
+                                                        pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
+                                                        pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
                                                     }
                                                     else
                                                     {
-                                                        pipe.HSet(_cacheKeyManager.MessageIdErrorInfo, message.MessageId, _queueConfig.Serializer.Serialize(messageErrorInfo));
+                                                        pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
+                                                        pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo", _queueConfig.Serializer.Serialize(messageErrorInfo));
                                                     }
 
                                                     pipe.EndPipe();
@@ -260,7 +271,7 @@ public class ConsumerBackgroundService : BackgroundService
                         var messageId = await _redisClient.XAddAsync(queueNameKey, data).ConfigureAwait(false);
 
                         using var tran = _redisClient.Multi();
-                        _redisClient.HSet(_cacheKeyManager.MessageIdMapping, baseMessage.MessageId, messageId);
+                        _redisClient.HSet($"{_cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", "Id", messageId);
                         _redisClient.ZRem(item.DelayQueueName, item.Member);
                         tran.Exec();
                     }

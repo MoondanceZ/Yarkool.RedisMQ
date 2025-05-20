@@ -88,7 +88,7 @@ namespace Yarkool.RedisMQ
                                                 //分为2种情况, 普通的未正常ACK超时, 一种是错误超时
                                                 //错误超时
                                                 var messageErrorInfo = default(MessageErrorInfo);
-                                                var errorInfoStr = _redisClient.HGet<string>(_cacheKeyManager.MessageIdErrorInfo, message.MessageId);
+                                                var errorInfoStr = _redisClient.HGet<string>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo");
                                                 if (errorInfoStr != null)
                                                     messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
 
@@ -100,9 +100,8 @@ namespace Yarkool.RedisMQ
                                                         using var pipeError = _redisClient.StartPipe();
                                                         pipeError.XAck(queueNameKey, groupName, entry.id);
                                                         pipeError.XDel(queueNameKey, entry.id);
-                                                        pipeError.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
-                                                        pipeError.ZAdd(_cacheKeyManager.ErrorMessageList, TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
-                                                        pipeError.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, 0, (-_queueConfig.ErrorListSize - 1));
+                                                        pipeError.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
+                                                        pipeError.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
                                                         pipeError.EndPipe();
                                                         continue;
                                                     }
@@ -115,7 +114,7 @@ namespace Yarkool.RedisMQ
                                                 pipe.XDel(queueNameKey, entry.id);
                                                 pipe.XAdd(queueNameKey, data);
                                                 var res = pipe.EndPipe();
-                                                await _redisClient.HSetAsync(_cacheKeyManager.MessageIdMapping, message.MessageId, res[2].ToString());
+                                                await _redisClient.HSetAsync($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Id", res[2].ToString());
 
                                                 _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
                                             }

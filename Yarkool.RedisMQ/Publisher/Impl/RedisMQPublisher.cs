@@ -43,8 +43,9 @@ namespace Yarkool.RedisMQ
                 tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.SAdd(cacheKeyManager.CommonQueueList, queueName);
                 tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
-                tran.HSet(cacheKeyManager.PublishMessageList, new Dictionary<string, string>
+                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", new Dictionary<string, string>
                 {
+                    ["Type"] = "Common",
                     ["Status"] = MessageStatus.Pending.ToString(),
                     ["Message"] = queueConfig.Serializer.Serialize(baseMessage),
                     ["Id"] = messageId
@@ -113,8 +114,9 @@ namespace Yarkool.RedisMQ
                 tran.SAdd(cacheKeyManager.DelayQueueList, queueName);
                 tran.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
                 tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
-                tran.HSet(cacheKeyManager.PublishMessageList, new Dictionary<string, string>
+                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", new Dictionary<string, string>
                 {
+                    ["Type"] = "Delay",
                     ["Status"] = MessageStatus.Pending.ToString(),
                     ["Message"] = queueConfig.Serializer.Serialize(baseMessage)
                 });

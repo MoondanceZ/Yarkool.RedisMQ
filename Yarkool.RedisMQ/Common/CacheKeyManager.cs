@@ -23,8 +23,8 @@ public class CacheKeyManager(QueueConfig queueConfig)
     public string AckCount => ParseCacheKey(nameof(AckCount));
 
     public string PublishMessageList => ParseCacheKey(nameof(PublishMessageList));
-    
-    public string PublishMessageIdSet => ParseCacheKey(nameof(PublishMessageIdSet));
+
+    public string PublishMessageIdSet => ParseCacheKey("MessageIdSet:Publish");
 
     public string ParseCacheKey(string key)
     {
@@ -36,6 +36,6 @@ public class CacheKeyManager(QueueConfig queueConfig)
 
     public string GetStatusMessageIdSet(MessageStatus status)
     {
-        return $"{status}MessageIdSet";
+        return $"MessageIdSet:{status}";
     }
 }

@@ -63,16 +63,16 @@ internal class RouteActionProvider
         realTimePipe.Get<long>($"{_cacheKeyManager.PublishFailed}:Total"); //2
         realTimePipe.Get<long>($"{_cacheKeyManager.PublishSucceeded}:Total"); //3
         realTimePipe.Get<long>($"{_cacheKeyManager.AckCount}:Total"); //4
-        realTimePipe.ZCard(_cacheKeyManager.ErrorMessageList); //5
+        realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed)); //5
         realTimePipe.SCard(_cacheKeyManager.CommonQueueList); //6
         realTimePipe.SCard(_cacheKeyManager.DelayQueueList); //7
         realTimePipe.SCard(_cacheKeyManager.ConsumerList); //8
         realTimePipe.HLen(_cacheKeyManager.ServerNodes); //9
+        realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending)); //10
+        realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing)); //11
+        realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying)); //12
+        realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed)); //13
         var realTimeResults = realTimePipe.EndPipe();
-
-        var commonQueueList = _redisClient.SMembers(_cacheKeyManager.CommonQueueList);
-        var delayQueueNameList = _redisClient.SMembers(_cacheKeyManager.DelayQueueNameList);
-        var pendingCount = commonQueueList.Select(x => _redisClient.XLen(_cacheKeyManager.ParseCacheKey(x))).Sum() + delayQueueNameList.Select(x => _redisClient.ZCard(x)).Sum();
 
         var result = new StatsResponse
         {
@@ -83,8 +83,11 @@ internal class RouteActionProvider
                 PublishFailed = (long)realTimeResults[2],
                 PublishSucceeded = (long)realTimeResults[3],
                 AckCount = (long)realTimeResults[4],
-                ErrorQueueLength = (long)realTimeResults[5],
-                PendingCount = pendingCount
+                FailedCount = (long)realTimeResults[5],
+                PendingCount = (long)realTimeResults[10],
+                ProcessingCount = (long)realTimeResults[11],
+                RetryingCount = (long)realTimeResults[12],
+                CompletedCount = (long)realTimeResults[13]
             },
             TwentyFourHoursStats = twentyFourHoursStatsList,
             ServerInfo = new StatsResponse.Types.ServerInfo
@@ -103,28 +106,41 @@ internal class RouteActionProvider
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
 
-        var pageRequest = httpContext.Request.Query.ToObject<PageRequest>();
+        var pageRequest = httpContext.Request.Query.ToObject<MessagePageRequest>();
 
         var pageIndex = pageRequest.PageIndex;
         var pageSize = pageRequest.PageSize;
+        var status = pageRequest.Status;
+        var key = status.HasValue ? _cacheKeyManager.GetStatusMessageIdSet(status.Value) : _cacheKeyManager.PublishMessageIdSet;
 
         var start = (pageIndex - 1) * pageSize;
         var stop = start + pageSize - 1;
 
-        var result = new List<BaseMessage>();
-        var data = redisClient.ZRevRange(_cacheKeyManager.PublishMessageList, start, stop);
+        var result = new List<MessageResponse>();
+        var data = redisClient.ZRevRange(key, start, stop);
         if (data != null)
         {
-            result = data.Select(x => _queueConfig.Serializer.Deserialize<BaseMessage>(x)!).ToList();
+            using var pipe = redisClient.StartPipe();
+            foreach (var item in data)
+            {
+                pipe.HGetAll<string>($"{_cacheKeyManager.PublishMessageList}:{item}");
+            }
+
+            var pipeResult = pipe.EndPipe();
+
+            foreach (var obj in pipeResult)
+            {
+                var dic = obj as IDictionary<string, string>;
+                result.Add(new MessageResponse
+                {
+                    Message = _queueConfig.Serializer.Deserialize<BaseMessage>(dic!["Message"])!,
+                    Status = Enum.Parse<MessageStatus>(dic["Status"]),
+                    ErrorInfo = dic.TryGetValue("ErrorInfo", out string? value) ? _queueConfig.Serializer.Deserialize<MessageErrorInfo>(value) : null,
+                });
+            }
         }
 
-        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(new PageResponse<BaseMessage>()
-        {
-            PageIndex = pageIndex,
-            PageSize = pageSize,
-            Items = result,
-            TotalCount = redisClient.ZCard(_cacheKeyManager.PublishMessageList)
-        }));
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
     }
 
     public Task Health(HttpContext httpContext)

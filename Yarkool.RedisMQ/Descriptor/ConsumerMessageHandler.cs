@@ -40,8 +40,9 @@ public class ConsumerMessageHandler
         {
             if (string.IsNullOrEmpty(id))
                 continue;
-            var streamMessageId = await redisClient.HGetAsync(cacheKeyManager.MessageIdMapping, id).ConfigureAwait(false);
-            streamMessageIdDic.Add(id, streamMessageId);
+            var streamMessageId = await redisClient.HGetAsync($"{cacheKeyManager.PublishMessageList}:{id}", "Id").ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(streamMessageId))
+                streamMessageIdDic.Add(id, streamMessageId);
         }
 
         if (streamMessageIdDic.Any())
@@ -52,7 +53,6 @@ public class ConsumerMessageHandler
             {
                 tran.XAck(queueName, groupName, item.Value);
                 tran.XDel(queueName, item.Value);
-                tran.HDel(cacheKeyManager.MessageIdMapping, item.Key);
                 tran.IncrBy($"{cacheKeyManager.AckCount}:Total", 1);
                 tran.IncrBy($"{cacheKeyManager.AckCount}:{time}", 1);
                 tran.Expire($"{cacheKeyManager.AckCount}:{time}", TimeSpan.FromHours(30));
