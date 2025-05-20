@@ -44,7 +44,7 @@ public class MessageController : ControllerBase
         {
             Input = input,
             MessageBody = new TestMessage.TestMessageBody()
-        }, TimeSpan.FromSeconds(10));
+        }, TimeSpan.FromSeconds(100));
         return $"{messageId}-{input}";
     }
 }
