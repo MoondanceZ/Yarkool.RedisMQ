@@ -185,7 +185,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                         pipe.XDel(queueNameKey, data.id);
                                                         pipe.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
                                                         pipe.ZAdd(_cacheKeyManager.ErrorMessageList, TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
-                                                        pipe.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, -_queueConfig.ErrorListSize, -1);
+                                                        pipe.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, 0, (-_queueConfig.ErrorListSize - 1));
                                                     }
                                                     else
                                                     {

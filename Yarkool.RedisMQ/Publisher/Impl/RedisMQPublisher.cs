@@ -39,8 +39,8 @@ namespace Yarkool.RedisMQ
                 tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
                 tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.SAdd(cacheKeyManager.CommonQueueList, queueName);
-                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, baseMessage.MessageContent);
-                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, -queueConfig.PublishListSize, -1);
+                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, queueConfig.Serializer.Serialize(baseMessage));
+                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, 0, (-queueConfig.PublishListSize - 1));
                 tran.Exec();
 
                 return baseMessage.MessageId;
@@ -103,8 +103,8 @@ namespace Yarkool.RedisMQ
                 tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.SAdd(cacheKeyManager.DelayQueueList, queueName);
                 tran.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
-                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, baseMessage.MessageContent);
-                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, -queueConfig.PublishListSize, -1);
+                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, queueConfig.Serializer.Serialize(baseMessage));
+                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, 0, (-queueConfig.PublishListSize - 1));
                 tran.Exec();
 
                 return Task.FromResult(baseMessage.MessageId);

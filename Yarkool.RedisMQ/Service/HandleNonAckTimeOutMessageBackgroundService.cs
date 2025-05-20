@@ -102,7 +102,7 @@ namespace Yarkool.RedisMQ
                                                         pipeError.XDel(queueNameKey, entry.id);
                                                         pipeError.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
                                                         pipeError.ZAdd(_cacheKeyManager.ErrorMessageList, TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
-                                                        pipeError.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, -_queueConfig.ErrorListSize, -1);
+                                                        pipeError.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, 0, (-_queueConfig.ErrorListSize - 1));
                                                         pipeError.EndPipe();
                                                         continue;
                                                     }
