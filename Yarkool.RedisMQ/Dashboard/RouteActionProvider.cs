@@ -109,7 +109,7 @@ internal class RouteActionProvider
         var pageSize = pageRequest.PageSize;
 
         var start = (pageIndex - 1) * pageSize;
-        var stop = start + pageSize -1;
+        var stop = start + pageSize - 1;
 
         var result = new List<BaseMessage>();
         var data = redisClient.ZRevRange(_cacheKeyManager.PublishMessageList, start, stop);
@@ -118,7 +118,13 @@ internal class RouteActionProvider
             result = data.Select(x => _queueConfig.Serializer.Deserialize<BaseMessage>(x)!).ToList();
         }
 
-        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(new PageResponse<BaseMessage>()
+        {
+            PageIndex = pageIndex,
+            PageSize = pageSize,
+            Items = result,
+            TotalCount = redisClient.ZCard(_cacheKeyManager.PublishMessageList)
+        }));
     }
 
     public Task Health(HttpContext httpContext)
