@@ -63,7 +63,7 @@ internal static class DashboardBuilderExtension
                 await httpContext.Response.WriteAsync(htmlBuilder.ToString(), Encoding.UTF8);
             }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
 
-            new RouteActionProvider(endpointRouteBuilder, options, cacheKeyManager).MapDashboardRoutes();
+            new RouteActionProvider(endpointRouteBuilder, options).MapDashboardRoutes();
         }
 
         return app;
