@@ -12,8 +12,6 @@ public class CacheKeyManager(QueueConfig queueConfig)
 
     public string ServerNodes => ParseCacheKey(nameof(ServerNodes));
 
-    public string MessageIdMapping => ParseCacheKey(nameof(MessageIdMapping));
-
     public string MessageIdErrorInfo => ParseCacheKey(nameof(MessageIdErrorInfo));
 
     public string PublishSucceeded => ParseCacheKey(nameof(PublishSucceeded));
@@ -29,6 +27,8 @@ public class CacheKeyManager(QueueConfig queueConfig)
     public string ErrorMessageList => ParseCacheKey(nameof(ErrorMessageList));
 
     public string PublishMessageList => ParseCacheKey(nameof(PublishMessageList));
+    
+    public string PublishMessageIdSet => ParseCacheKey(nameof(PublishMessageIdSet));
 
     public string ParseCacheKey(string key)
     {

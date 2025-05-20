@@ -29,18 +29,26 @@ namespace Yarkool.RedisMQ
                     throw new RedisMQException("message cannot be null!");
 
                 var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
-                var baseMessage = new BaseMessage { MessageContent = queueConfig.Serializer.Serialize(message) };
+                var baseMessage = new BaseMessage
+                {
+                    QueueName = queueName,
+                    MessageContent = queueConfig.Serializer.Serialize(message)
+                };
                 var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
                 var messageId = await redisClient.XAddAsync(queueNameKey, data).ConfigureAwait(false);
 
                 var tran = redisClient.Multi();
-                tran.HSet(cacheKeyManager.MessageIdMapping, baseMessage.MessageId, messageId);
                 tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
                 tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
                 tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.SAdd(cacheKeyManager.CommonQueueList, queueName);
-                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, queueConfig.Serializer.Serialize(baseMessage));
-                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, 0, (-queueConfig.PublishListSize - 1));
+                tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
+                tran.HSet(cacheKeyManager.PublishMessageList, new Dictionary<string, string>
+                {
+                    ["Status"] = MessageStatus.Pending.ToString(),
+                    ["Message"] = queueConfig.Serializer.Serialize(baseMessage),
+                    ["Id"] = messageId
+                });
                 tran.Exec();
 
                 return baseMessage.MessageId;
@@ -93,6 +101,7 @@ namespace Yarkool.RedisMQ
 
                 var baseMessage = new BaseMessage
                 {
+                    QueueName = queueName,
                     MessageContent = queueConfig.Serializer.Serialize(message),
                     DelayTime = delaySeconds
                 };
@@ -103,8 +112,12 @@ namespace Yarkool.RedisMQ
                 tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.SAdd(cacheKeyManager.DelayQueueList, queueName);
                 tran.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
-                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, queueConfig.Serializer.Serialize(baseMessage));
-                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, 0, (-queueConfig.PublishListSize - 1));
+                tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
+                tran.HSet(cacheKeyManager.PublishMessageList, new Dictionary<string, string>
+                {
+                    ["Status"] = MessageStatus.Pending.ToString(),
+                    ["Message"] = queueConfig.Serializer.Serialize(baseMessage)
+                });
                 tran.Exec();
 
                 return Task.FromResult(baseMessage.MessageId);

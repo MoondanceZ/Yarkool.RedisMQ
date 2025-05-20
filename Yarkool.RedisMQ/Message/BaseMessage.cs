@@ -18,6 +18,11 @@
         public string MachineName { get; set; } = Environment.MachineName;
 
         /// <summary>
+        /// 队列名称
+        /// </summary>
+        public string QueueName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 延迟时间, 单位: 秒
         /// </summary>
         public double DelayTime { get; set; }
