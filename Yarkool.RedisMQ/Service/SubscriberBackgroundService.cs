@@ -60,6 +60,7 @@ public class ConsumerBackgroundService : BackgroundService
             var queueName = consumerExecutorDescriptor.QueueName;
             var groupName = consumerExecutorDescriptor.GroupName;
             var consumerName = consumerExecutorDescriptor.ConsumerName;
+            var automaticRetryAttempts = consumerExecutorDescriptor.AutomaticRetryAttempts;
             var isDelayQueueConsumer = consumerExecutorDescriptor.IsDelayQueueConsumer;
             var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
             var isAutoAck = consumerExecutorDescriptor.IsAutoAck;
@@ -113,6 +114,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             tran.IncrBy($"{_cacheKeyManager.ConsumeSucceeded}:Total", 1);
                                             tran.IncrBy($"{_cacheKeyManager.ConsumeSucceeded}:{time}", 1);
                                             tran.Expire($"{_cacheKeyManager.ConsumeSucceeded}:{time}", TimeSpan.FromHours(30));
+                                            tran.HDel(_cacheKeyManager.MessageIdErrorInfo, message.MessageId);
                                             if (isAutoAck)
                                             {
                                                 //ACK
@@ -132,47 +134,70 @@ public class ConsumerBackgroundService : BackgroundService
                                         {
                                             try
                                             {
-                                                using var pipe = _redisClient.StartPipe();
-                                                pipe.IncrBy($"{_cacheKeyManager.ConsumeFailed}:Total", 1);
-                                                pipe.IncrBy($"{_cacheKeyManager.ConsumeFailed}:{time}", 1);
-                                                pipe.Expire($"{_cacheKeyManager.ConsumeFailed}:{time}", TimeSpan.FromHours(30));
-                                                pipe.EndPipe();
-
                                                 //Execute message
                                                 if (onErrorAsyncMethodInvoker != null)
                                                 {
                                                     var consumer = _serviceProvider.CreateScope().ServiceProvider.GetService(consumerType);
                                                     await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, ex, stoppingToken)!).ConfigureAwait(false);
                                                 }
-
-                                                if (_queueConfig.ErrorQueueOptions != null && message != null)
-                                                {
-                                                    var errorMessage = new ErrorMessage
-                                                    {
-                                                        ConsumerName = consumerName,
-                                                        ExceptionMessage = ex.Message,
-                                                        StackTrace = ex.StackTrace,
-                                                        GroupName = groupName,
-                                                        QueueName = queueName,
-                                                        ErrorMessageContent = messageContent,
-                                                        ErrorMessageTimestamp = message.CreateTimestamp
-                                                    };
-                                                    await _publisher.PublishMessageAsync(_queueConfig.ErrorQueueOptions.QueueName, errorMessage).ConfigureAwait(false);
-
-                                                    //delete message
-                                                    if (_queueConfig.ErrorQueueOptions.IsDeleteOriginalQueueMessage)
-                                                    {
-                                                        using var tran = _redisClient.Multi();
-                                                        tran.XAck(queueNameKey, groupName, data.id);
-                                                        tran.XDel(queueNameKey, data.id);
-                                                        tran.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
-                                                        tran.Exec();
-                                                    }
-                                                }
                                             }
                                             catch (Exception errorEx)
                                             {
                                                 _logger?.LogError(new RedisMQDataException("Handle error exception!", message, errorEx), "Handle error exception!");
+                                            }
+                                            
+                                            try
+                                            {
+                                                using var pipe = _redisClient.StartPipe();
+                                                pipe.IncrBy($"{_cacheKeyManager.ConsumeFailed}:Total", 1);
+                                                pipe.IncrBy($"{_cacheKeyManager.ConsumeFailed}:{time}", 1);
+                                                pipe.Expire($"{_cacheKeyManager.ConsumeFailed}:{time}", TimeSpan.FromHours(30));
+
+                                                if (message != null)
+                                                {
+                                                    //超出重试次数, 从原来的队列中删除, 并加入到异常列表
+                                                    var messageErrorInfo = default(MessageErrorInfo);
+                                                    var errorInfoStr = _redisClient.HGet<string>(_cacheKeyManager.MessageIdErrorInfo, message.MessageId);
+                                                    if (errorInfoStr != null)
+                                                    {
+                                                        messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
+                                                        messageErrorInfo!.RetryCount += 1;
+                                                    }
+                                                    else
+                                                    {
+                                                        messageErrorInfo = new MessageErrorInfo
+                                                        {
+                                                            ConsumerName = consumerName,
+                                                            ExceptionMessage = ex.Message,
+                                                            StackTrace = ex.StackTrace,
+                                                            GroupName = groupName,
+                                                            QueueName = queueName,
+                                                            ErrorMessageContent = messageContent,
+                                                            ErrorMessageTimestamp = TimeHelper.GetMillisecondTimestamp(),
+                                                            RetryCount = 1
+                                                        };
+                                                    }
+
+                                                    //超出了重试次数, 则删除队列消息, 并添加到错误列表
+                                                    if (messageErrorInfo.RetryCount > automaticRetryAttempts)
+                                                    {
+                                                        pipe.XAck(queueNameKey, groupName, data.id);
+                                                        pipe.XDel(queueNameKey, data.id);
+                                                        pipe.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
+                                                        pipe.ZAdd(_cacheKeyManager.ErrorMessageList, TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
+                                                        pipe.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, -_queueConfig.ErrorListSize, -1);
+                                                    }
+                                                    else
+                                                    {
+                                                        pipe.HSet(_cacheKeyManager.MessageIdErrorInfo, message.MessageId, _queueConfig.Serializer.Serialize(messageErrorInfo));
+                                                    }
+
+                                                    pipe.EndPipe();
+                                                }
+                                            }
+                                            catch (Exception errorEx)
+                                            {
+                                                _logger?.LogError(new RedisMQDataException("Handle error data exception!", message, errorEx), "Handle error data exception!");
                                             }
 
                                             _logger?.LogError(new RedisMQDataException("Handle consumer message exception!", message, ex), "Handle consumer message exception!");

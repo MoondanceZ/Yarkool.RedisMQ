@@ -32,5 +32,10 @@
         /// 是否自动 Ack
         /// </summary>
         public bool IsAutoAck { get; set; } = true;
+
+        /// <summary>
+        /// 自动重试次数
+        /// </summary>
+        public int AutomaticRetryAttempts { get; set; } = 10;
     }
 }

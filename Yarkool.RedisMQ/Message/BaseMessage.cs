@@ -1,6 +1,6 @@
 ﻿namespace Yarkool.RedisMQ
 {
-    public class BaseMessage
+    internal class BaseMessage
     {
         /// <summary>
         /// 时间戳

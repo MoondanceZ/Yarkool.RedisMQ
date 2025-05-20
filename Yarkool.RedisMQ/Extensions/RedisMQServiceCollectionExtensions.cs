@@ -26,9 +26,6 @@ namespace Yarkool.RedisMQ
             if (!services.Any(x => x.ServiceType == typeof(ILoggerFactory)))
                 services.AddLogging();
 
-            if (queueConfig.ErrorQueueOptions != null && string.IsNullOrEmpty(queueConfig.ErrorQueueOptions.QueueName))
-                throw new RedisMQException("error queue name cannot be empty!");
-
             services.AddRedisMQConsumer();
             services.AddSingleton<IRedisMQPublisher, RedisMQPublisher>();
             services.AddSingleton<ConsumerServiceSelector>();

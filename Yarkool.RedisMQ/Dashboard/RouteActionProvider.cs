@@ -63,7 +63,7 @@ internal class RouteActionProvider
         realTimePipe.Get<long>($"{cacheKeyManager.PublishFailed}:Total"); //2
         realTimePipe.Get<long>($"{cacheKeyManager.PublishSucceeded}:Total"); //3
         realTimePipe.Get<long>($"{cacheKeyManager.AckCount}:Total"); //4
-        realTimePipe.XLen(cacheKeyManager.ParseCacheKey(queueConfig.ErrorQueueOptions?.QueueName ?? "")); //5
+        realTimePipe.ZCard(cacheKeyManager.ErrorMessageList); //5
         realTimePipe.SCard(cacheKeyManager.CommonQueueList); //6
         realTimePipe.SCard(cacheKeyManager.DelayQueueList); //7
         realTimePipe.SCard(cacheKeyManager.ConsumerList); //8

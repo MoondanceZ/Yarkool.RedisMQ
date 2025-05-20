@@ -15,7 +15,6 @@ var build = new HostBuilder()
             config.RedisPrefix = "Test:";
             config.RegisterConsumerService = false;
             config.RepublishNonAckTimeOutMessage = true;
-            config.UseErrorQueue();
         });
     });
 

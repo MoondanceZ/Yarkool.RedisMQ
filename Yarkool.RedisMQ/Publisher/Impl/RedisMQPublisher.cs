@@ -25,20 +25,23 @@ namespace Yarkool.RedisMQ
             {
                 if (string.IsNullOrEmpty(queueName))
                     throw new RedisMQException("queue name cannot be null!");
+                if (message == null)
+                    throw new RedisMQException("message cannot be null!");
 
                 var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
-                var baseMessage = new BaseMessage { MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message) };
+                var baseMessage = new BaseMessage { MessageContent = queueConfig.Serializer.Serialize(message) };
                 var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
                 var messageId = await redisClient.XAddAsync(queueNameKey, data).ConfigureAwait(false);
 
-                var pipe = redisClient.StartPipe();
-                pipe.HSet(cacheKeyManager.MessageIdMapping, baseMessage.MessageId, messageId);
-                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
-                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
-                pipe.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
-                if (queueName != queueConfig.ErrorQueueOptions?.QueueName)
-                    pipe.SAdd(cacheKeyManager.CommonQueueList, queueName);
-                pipe.EndPipe();
+                var tran = redisClient.Multi();
+                tran.HSet(cacheKeyManager.MessageIdMapping, baseMessage.MessageId, messageId);
+                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
+                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
+                tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                tran.SAdd(cacheKeyManager.CommonQueueList, queueName);
+                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, baseMessage.MessageContent);
+                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, -queueConfig.PublishListSize, -1);
+                tran.Exec();
 
                 return baseMessage.MessageId;
             }
@@ -67,6 +70,9 @@ namespace Yarkool.RedisMQ
             {
                 if (string.IsNullOrEmpty(queueName))
                     throw new RedisMQException("queue name cannot be null!");
+                if (message == null)
+                    throw new RedisMQException("message cannot be null!");
+
                 var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
 
                 var delaySeconds = delayTime.TotalSeconds;
@@ -87,17 +93,19 @@ namespace Yarkool.RedisMQ
 
                 var baseMessage = new BaseMessage
                 {
-                    MessageContent = message == null ? null : queueConfig.Serializer.Serialize(message),
+                    MessageContent = queueConfig.Serializer.Serialize(message),
                     DelayTime = delaySeconds
                 };
-                var pipe = redisClient.StartPipe();
-                pipe.ZAdd(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
-                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
-                pipe.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
-                pipe.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
-                pipe.SAdd(cacheKeyManager.DelayQueueList, queueName);
-                pipe.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
-                pipe.EndPipe();
+                var tran = redisClient.Multi();
+                tran.ZAdd(delayQueueName, (decimal)score, baseMessage.MessageContent);
+                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
+                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
+                tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
+                tran.SAdd(cacheKeyManager.DelayQueueList, queueName);
+                tran.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
+                tran.ZAdd(cacheKeyManager.PublishMessageList, baseMessage.CreateTimestamp, baseMessage.MessageContent);
+                tran.ZRemRangeByRank(cacheKeyManager.PublishMessageList, -queueConfig.PublishListSize, -1);
+                tran.Exec();
 
                 return Task.FromResult(baseMessage.MessageId);
             }

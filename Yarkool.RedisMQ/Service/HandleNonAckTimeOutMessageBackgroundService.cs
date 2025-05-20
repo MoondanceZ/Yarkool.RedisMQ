@@ -51,6 +51,7 @@ namespace Yarkool.RedisMQ
                 var queueName = consumerExecutorDescriptor.QueueName;
                 var groupName = consumerExecutorDescriptor.GroupName;
                 var consumerName = consumerExecutorDescriptor.ConsumerName;
+                var automaticRetryAttempts = consumerExecutorDescriptor.AutomaticRetryAttempts;
                 var pendingTimeOut = consumerExecutorDescriptor.PendingTimeOut * 1000;
                 var queueNameKey = _cacheKeyManager.ParseCacheKey(queueName);
 
@@ -83,13 +84,37 @@ namespace Yarkool.RedisMQ
                                             if (isTimeOutMessage)
                                             {
                                                 message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
+
+                                                //分为2种情况, 普通的未正常ACK超时, 一种是错误超时
+                                                //错误超时
+                                                var messageErrorInfo = default(MessageErrorInfo);
+                                                var errorInfoStr = _redisClient.HGet<string>(_cacheKeyManager.MessageIdErrorInfo, message.MessageId);
+                                                if (errorInfoStr != null)
+                                                    messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
+
+                                                if (messageErrorInfo != null)
+                                                {
+                                                    //超出了重试次数, 则删除队列消息, 并添加到错误列表
+                                                    if (messageErrorInfo.RetryCount > automaticRetryAttempts)
+                                                    {
+                                                        using var pipeError = _redisClient.StartPipe();
+                                                        pipeError.XAck(queueNameKey, groupName, entry.id);
+                                                        pipeError.XDel(queueNameKey, entry.id);
+                                                        pipeError.HDel(_cacheKeyManager.MessageIdMapping, message.MessageId);
+                                                        pipeError.ZAdd(_cacheKeyManager.ErrorMessageList, TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
+                                                        pipeError.ZRemRangeByRank(_cacheKeyManager.ErrorMessageList, -_queueConfig.ErrorListSize, -1);
+                                                        pipeError.EndPipe();
+                                                        continue;
+                                                    }
+                                                }
+
                                                 var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
 
-                                                using var tran = _redisClient.Multi();
-                                                tran.XAck(queueNameKey, groupName, entry.id);
-                                                tran.XDel(queueNameKey, entry.id);
-                                                tran.XAdd(queueNameKey, data);
-                                                var res = tran.Exec();
+                                                using var pipe = _redisClient.StartPipe();
+                                                pipe.XAck(queueNameKey, groupName, entry.id);
+                                                pipe.XDel(queueNameKey, entry.id);
+                                                pipe.XAdd(queueNameKey, data);
+                                                var res = pipe.EndPipe();
                                                 await _redisClient.HSetAsync(_cacheKeyManager.MessageIdMapping, message.MessageId, res[2].ToString());
 
                                                 _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
@@ -101,10 +126,10 @@ namespace Yarkool.RedisMQ
                                             var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > pendingTimeOut;
                                             if (isTimeOutMessage)
                                             {
-                                                using var tran = _redisClient.Multi();
-                                                tran.XAck(queueNameKey, groupName, entry.id);
-                                                tran.XDel(queueNameKey, entry.id);
-                                                tran.Exec();
+                                                using var pipe = _redisClient.StartPipe();
+                                                pipe.XAck(queueNameKey, groupName, entry.id);
+                                                pipe.XDel(queueNameKey, entry.id);
+                                                pipe.EndPipe();
                                             }
                                         }
                                     }

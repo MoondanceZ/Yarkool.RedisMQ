@@ -6,9 +6,4 @@ public partial class QueueConfig
     /// DashboardOptions
     /// </summary>
     internal DashboardOptions? DashboardOptions { get; set; }
-
-    /// <summary>
-    /// ErrorQueueOptions
-    /// </summary>
-    internal ErrorQueueOptions? ErrorQueueOptions { get; set; }
 }

@@ -21,22 +21,19 @@
         public string? RedisPrefix { get; set; }
 
         /// <summary>
+        /// 发布列表大小
+        /// </summary>
+        public int PublishListSize { get; set; } = 5000;
+
+        /// <summary>
+        /// 错误列表大小
+        /// </summary>
+        public int ErrorListSize { get; set; } = 20000;
+
+        /// <summary>
         /// 序列化器
         /// </summary>
         public ISerializer Serializer { get; set; } = new DefaultSerializer();
-
-        /// <summary>
-        /// UseErrorQueue
-        /// </summary>
-        /// <param name="options"></param>
-        public void UseErrorQueue(Action<ErrorQueueOptions>? options = null)
-        {
-            ErrorQueueOptions = new ErrorQueueOptions();
-            options?.Invoke(ErrorQueueOptions);
-
-            if (string.IsNullOrEmpty(ErrorQueueOptions.QueueName))
-                throw new ArgumentNullException(nameof(ErrorQueueOptions.QueueName));
-        }
 
         /// <summary>
         /// UseDashboard

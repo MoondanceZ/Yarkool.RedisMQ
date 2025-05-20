@@ -18,7 +18,6 @@ public class Tests
             config.RedisPrefix = "RedisMQ:";
             config.RegisterConsumerService = false;
             config.RepublishNonAckTimeOutMessage = true;
-            config.UseErrorQueue();
         });
 
         _serviceProvider = services.BuildServiceProvider();
