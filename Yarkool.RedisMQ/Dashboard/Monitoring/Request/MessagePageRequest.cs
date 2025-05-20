@@ -5,5 +5,5 @@ internal class MessagePageRequest : PageRequest
     /// <summary>
     /// Status
     /// </summary>
-    public MessageStatus? Status { get; set; }
+    public int? Status { get; set; }
 }

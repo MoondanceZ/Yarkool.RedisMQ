@@ -111,7 +111,7 @@ internal class RouteActionProvider
         var pageIndex = pageRequest.PageIndex;
         var pageSize = pageRequest.PageSize;
         var status = pageRequest.Status;
-        var key = status.HasValue ? _cacheKeyManager.GetStatusMessageIdSet(status.Value) : _cacheKeyManager.PublishMessageIdSet;
+        var key = status.HasValue ? _cacheKeyManager.GetStatusMessageIdSet(Enum.Parse<MessageStatus>(status.Value.ToString())) : _cacheKeyManager.PublishMessageIdSet;
 
         var start = (pageIndex - 1) * pageSize;
         var stop = start + pageSize - 1;
