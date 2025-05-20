@@ -20,7 +20,7 @@ public class MessageController : ControllerBase
     [HttpPost("PublishMessage")]
     public string PublishMessage()
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 1; i++)
         {
             _ = _publisher.PublishMessageAsync("Test", new TestMessage
             {
@@ -44,7 +44,7 @@ public class MessageController : ControllerBase
         {
             Input = input,
             MessageBody = new TestMessage.TestMessageBody()
-        }, TimeSpan.FromSeconds(66));
+        }, TimeSpan.FromSeconds(10));
         return $"{messageId}-{input}";
     }
 }

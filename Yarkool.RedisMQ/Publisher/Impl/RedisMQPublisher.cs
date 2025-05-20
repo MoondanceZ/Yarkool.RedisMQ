@@ -97,7 +97,7 @@ namespace Yarkool.RedisMQ
                     DelayTime = delaySeconds
                 };
                 var tran = redisClient.Multi();
-                tran.ZAdd(delayQueueName, (decimal)score, baseMessage.MessageContent);
+                tran.ZAdd(delayQueueName, (decimal)score, queueConfig.Serializer.Serialize(baseMessage));
                 tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
                 tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
                 tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
