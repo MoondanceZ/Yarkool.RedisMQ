@@ -157,7 +157,7 @@ public class ConsumerBackgroundService : BackgroundService
                                                         ErrorMessageContent = messageContent,
                                                         ErrorMessageTimestamp = message.CreateTimestamp
                                                     };
-                                                    await _publisher.PublishMessageAsync(_cacheKeyManager.ParseCacheKey(_queueConfig.ErrorQueueOptions.QueueName), errorMessage).ConfigureAwait(false);
+                                                    await _publisher.PublishMessageAsync(_queueConfig.ErrorQueueOptions.QueueName, errorMessage).ConfigureAwait(false);
 
                                                     //delete message
                                                     if (_queueConfig.ErrorQueueOptions.IsDeleteOriginalQueueMessage)
