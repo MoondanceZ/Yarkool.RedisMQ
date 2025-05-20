@@ -3,8 +3,9 @@ namespace Yarkool.RedisMQ;
 public class CacheKeyManager(QueueConfig queueConfig)
 {
     public string CommonQueueList => ParseCacheKey(nameof(CommonQueueList));
+
     public string DelayQueueList => ParseCacheKey(nameof(DelayQueueList));
-    
+
     public string DelayQueueNameList => ParseCacheKey(nameof(DelayQueueNameList));
 
     public string ConsumerList => ParseCacheKey(nameof(ConsumerList));
