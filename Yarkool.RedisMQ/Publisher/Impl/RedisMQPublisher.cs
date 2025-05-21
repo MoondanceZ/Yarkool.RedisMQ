@@ -28,7 +28,7 @@ namespace Yarkool.RedisMQ
                 if (message == null)
                     throw new RedisMQException("message cannot be null!");
 
-                var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
+                var queueNameKey = cacheKeyManager.GetQueueName(queueName);
                 var baseMessage = new BaseMessage
                 {
                     QueueName = queueName,
@@ -83,7 +83,7 @@ namespace Yarkool.RedisMQ
                 if (message == null)
                     throw new RedisMQException("message cannot be null!");
 
-                var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
+                var queueNameKey = cacheKeyManager.GetQueueName(queueName);
 
                 var delaySeconds = delayTime.TotalSeconds;
                 if (delaySeconds <= 0)

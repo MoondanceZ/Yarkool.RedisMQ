@@ -31,7 +31,7 @@ public class ConsumerBackgroundService : BackgroundService
         {
             var queueName = consumerExecutorDescriptor.QueueName;
             var groupName = consumerExecutorDescriptor.GroupName;
-            var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
+            var queueNameKey = cacheKeyManager.GetQueueName(queueName);
 
             //初始化队列信息
             if (!_redisClient.Exists(queueNameKey))
@@ -66,7 +66,7 @@ public class ConsumerBackgroundService : BackgroundService
             var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod);
             var onErrorAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnErrorAsync));
             var onErrorAsyncMethodInvoker = onErrorAsyncMethod == null ? null : MethodInvoker.Create(onErrorAsyncMethod);
-            var queueNameKey = _cacheKeyManager.ParseCacheKey(queueName);
+            var queueNameKey = _cacheKeyManager.GetQueueName(queueName);
 
             if (isDelayQueueConsumer)
                 Task.Run(() => ExecuteDelayQueuePollingAsync(consumerExecutorDescriptor, stoppingToken), stoppingToken);
@@ -239,7 +239,7 @@ public class ConsumerBackgroundService : BackgroundService
         _ = RunLiveServerAsync(stoppingToken);
         var queueName = consumerExecutorDescriptor.QueueName;
         var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
-        var queueNameKey = _cacheKeyManager.ParseCacheKey(queueName);
+        var queueNameKey = _cacheKeyManager.GetQueueName(queueName);
         while (!stoppingToken.IsCancellationRequested)
         {
             var delayTimeSortedSetName = $"{queueNameKey}:DelayTimeType";

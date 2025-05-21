@@ -28,7 +28,7 @@ namespace Yarkool.RedisMQ
             {
                 var queueName = consumerExecutorDescriptor.QueueName;
                 var groupName = consumerExecutorDescriptor.GroupName;
-                var queueNameKey = cacheKeyManager.ParseCacheKey(queueName);
+                var queueNameKey = cacheKeyManager.GetQueueName(queueName);
 
                 //初始化队列信息
                 if (!_redisClient.Exists(queueNameKey))
@@ -53,7 +53,7 @@ namespace Yarkool.RedisMQ
                 var consumerName = consumerExecutorDescriptor.ConsumerName;
                 var automaticRetryAttempts = consumerExecutorDescriptor.AutomaticRetryAttempts;
                 var pendingTimeOut = consumerExecutorDescriptor.PendingTimeOut * 1000;
-                var queueNameKey = _cacheKeyManager.ParseCacheKey(queueName);
+                var queueNameKey = _cacheKeyManager.GetQueueName(queueName);
 
                 for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
                 {

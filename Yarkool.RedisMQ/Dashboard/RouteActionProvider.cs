@@ -25,6 +25,7 @@ internal class RouteActionProvider
 
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapGet(prefixMatch + "/message/list", MessageList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/message/delete", MessageDelete).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
     private async Task Stats(HttpContext httpContext)
@@ -104,7 +105,7 @@ internal class RouteActionProvider
             }
         };
 
-        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
     }
 
     private async Task MessageList(HttpContext httpContext)
@@ -145,7 +146,36 @@ internal class RouteActionProvider
             }
         }
 
-        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(result));
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
+    }
+
+    private async Task MessageDelete(HttpContext httpContext)
+    {
+        var redisClient = _serviceProvider.GetService<IRedisClient>()!;
+
+        var idList = httpContext.Request.Body.ToObject<List<string>>();
+
+        if (idList.Any())
+        {
+            using var pipe = redisClient.StartPipe();
+            foreach (var id in idList)
+            {
+                pipe.ZRem(_cacheKeyManager.PublishMessageIdSet, id);
+                pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), id);
+                pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), id);
+                pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), id);
+                pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), id);
+                pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), id);
+                pipe.HDel($"{_cacheKeyManager.PublishMessageList}:{id}");
+            }
+
+            pipe.EndPipe();
+            await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success("删除成功"));
+        }
+        else
+        {
+            await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success("请选择要删除的消息"));
+        }
     }
 
     public Task Health(HttpContext httpContext)

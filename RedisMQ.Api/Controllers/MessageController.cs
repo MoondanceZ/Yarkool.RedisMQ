@@ -37,14 +37,37 @@ public class MessageController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost("PublishDelayMessage")]
-    public async Task<string> PublishDelayMessage()
+    public async Task<string> PublishDelayMessage(int delaySeconds = 10)
     {
         var input = Guid.NewGuid().ToString("N");
-        var messageId = await _publisher.PublishMessageAsync("Delay", new TestMessage
+
+        for (int i = 0; i < 10; i++)
         {
-            Input = input,
-            MessageBody = new TestMessage.TestMessageBody()
-        }, TimeSpan.FromSeconds(100));
-        return $"{messageId}-{input}";
+            _ = await _publisher.PublishMessageAsync("Delay", new TestMessage
+            {
+                Input = input,
+                MessageBody = new TestMessage.TestMessageBody()
+            }, TimeSpan.FromSeconds(delaySeconds));
+
+            _ = await _publisher.PublishMessageAsync("Delay2", new TestMessage
+            {
+                Input = input,
+                MessageBody = new TestMessage.TestMessageBody()
+            }, TimeSpan.FromSeconds(delaySeconds));
+
+            _ = await _publisher.PublishMessageAsync("Delay3", new TestMessage
+            {
+                Input = input,
+                MessageBody = new TestMessage.TestMessageBody()
+            }, TimeSpan.FromSeconds(delaySeconds));
+
+            _ = await _publisher.PublishMessageAsync("Delay4", new TestMessage
+            {
+                Input = input,
+                MessageBody = new TestMessage.TestMessageBody()
+            }, TimeSpan.FromSeconds(delaySeconds));
+        }
+
+        return $"success";
     }
 }

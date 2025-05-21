@@ -1,4 +1,6 @@
 ﻿using System.Reflection;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,6 +24,20 @@ public static class QueryExtensions
         }
 
         return obj;
+    }
+
+    public static T ToObject<T>(this Stream stream) where T : new()
+    {
+        stream.Position = 0;
+
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        var content = (reader.ReadToEnd()).TrimEnd();
+
+        var obj = JsonSerializer.Deserialize<T>(content);
+
+        stream.Position = 0;
+
+        return obj!;
     }
 
     private static object? ConvertValue(string? value, Type targetType)

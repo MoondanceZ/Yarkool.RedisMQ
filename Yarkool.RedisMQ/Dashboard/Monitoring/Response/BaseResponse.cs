@@ -17,16 +17,6 @@ internal class BaseResponse
     /// </summary>
     public object? Data { get; set; }
 
-    public static BaseResponse Success(object? data = null)
-    {
-        return new BaseResponse
-        {
-            Code = 0,
-            Message = null,
-            Data = data
-        };
-    }
-
     public static BaseResponse Success(string? message = null, object? data = null)
     {
         return new BaseResponse

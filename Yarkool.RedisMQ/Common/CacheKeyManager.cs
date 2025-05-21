@@ -2,29 +2,29 @@ namespace Yarkool.RedisMQ;
 
 public class CacheKeyManager(QueueConfig queueConfig)
 {
-    public string CommonQueueList => ParseCacheKey(nameof(CommonQueueList));
+    public string CommonQueueList => ParseCacheKey($"Server:{nameof(CommonQueueList)}");
 
-    public string DelayQueueList => ParseCacheKey(nameof(DelayQueueList));
+    public string DelayQueueList => ParseCacheKey($"Server:{nameof(DelayQueueList)}");
 
-    public string DelayQueueNameList => ParseCacheKey(nameof(DelayQueueNameList));
+    public string DelayQueueNameList => ParseCacheKey($"Server:{nameof(DelayQueueNameList)}");
 
-    public string ConsumerList => ParseCacheKey(nameof(ConsumerList));
+    public string ConsumerList => ParseCacheKey($"Server:{nameof(ConsumerList)}");
 
-    public string ServerNodes => ParseCacheKey(nameof(ServerNodes));
+    public string ServerNodes => ParseCacheKey($"Server:{nameof(ServerNodes)}");
 
-    public string PublishSucceeded => ParseCacheKey(nameof(PublishSucceeded));
+    public string PublishSucceeded => ParseCacheKey($"Stat:{nameof(PublishSucceeded)}");
 
-    public string PublishFailed => ParseCacheKey(nameof(PublishFailed));
+    public string PublishFailed => ParseCacheKey($"Stat:{nameof(PublishFailed)}");
 
-    public string ConsumeSucceeded => ParseCacheKey(nameof(ConsumeSucceeded));
+    public string ConsumeSucceeded => ParseCacheKey($"Stat:{nameof(ConsumeSucceeded)}");
 
-    public string ConsumeFailed => ParseCacheKey(nameof(ConsumeFailed));
+    public string ConsumeFailed => ParseCacheKey($"Stat:{nameof(ConsumeFailed)}");
 
-    public string AckCount => ParseCacheKey(nameof(AckCount));
+    public string AckCount => ParseCacheKey($"Stat:{nameof(AckCount)}");
 
-    public string PublishMessageList => ParseCacheKey(nameof(PublishMessageList));
+    public string PublishMessageList => ParseCacheKey($"Message:PublishList");
 
-    public string PublishMessageIdSet => ParseCacheKey("MessageIdSet:Publish");
+    public string PublishMessageIdSet => ParseCacheKey("Message:IdSet:Publish");
 
     public string ParseCacheKey(string key)
     {
@@ -36,6 +36,11 @@ public class CacheKeyManager(QueueConfig queueConfig)
 
     public string GetStatusMessageIdSet(MessageStatus status)
     {
-        return $"MessageIdSet:{status}";
+        return ParseCacheKey($"Message:IdSet:{status}");
+    }
+
+    public string GetQueueName(string queueName)
+    {
+        return ParseCacheKey($"Queue:{queueName}");
     }
 }
