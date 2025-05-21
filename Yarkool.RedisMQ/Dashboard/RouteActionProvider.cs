@@ -136,7 +136,7 @@ internal class RouteActionProvider
 
             foreach (var obj in pipeResult)
             {
-                var dic = obj as IDictionary<string, string>;
+                var dic = obj as Dictionary<string, string>;
                 result.Add(new MessageResponse
                 {
                     Message = _queueConfig.Serializer.Deserialize<BaseMessage>(dic!["Message"])!,
