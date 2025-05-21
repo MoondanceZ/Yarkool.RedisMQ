@@ -146,6 +146,7 @@ internal class RouteActionProvider
                 {
                     Message = _queueConfig.Serializer.Deserialize<BaseMessage>(dic!["Message"])!,
                     Status = Enum.Parse<MessageStatus>(dic["Status"]),
+                    ExecutionTimes = int.Parse(dic["ExecutionTimes"]),
                     ErrorInfo = dic.TryGetValue("ErrorInfo", out string? value) ? _queueConfig.Serializer.Deserialize<MessageErrorInfo>(value) : null,
                 });
             }

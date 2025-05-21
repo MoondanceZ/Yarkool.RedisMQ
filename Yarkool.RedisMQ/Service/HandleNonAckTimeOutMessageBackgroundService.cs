@@ -94,8 +94,9 @@ namespace Yarkool.RedisMQ
 
                                                 if (messageErrorInfo != null)
                                                 {
+                                                    var executionTimes = _redisClient.HGet<int>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ExecutionTimes");
                                                     //超出了重试次数, 则删除队列消息, 并添加到错误列表
-                                                    if (messageErrorInfo.RetryCount > automaticRetryAttempts)
+                                                    if (executionTimes > automaticRetryAttempts)
                                                     {
                                                         using var pipeError = _redisClient.StartPipe();
                                                         pipeError.XAck(queueNameKey, groupName, entry.id);

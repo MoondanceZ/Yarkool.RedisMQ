@@ -108,6 +108,7 @@ public class ConsumerBackgroundService : BackgroundService
                                             using var pipe = _redisClient.StartPipe();
                                             pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
                                             pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Processing.ToString());
+                                            pipe.HIncrBy($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ExecutionTimes", 1);
                                             pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
                                             pipe.EndPipe();
 
@@ -165,14 +166,13 @@ public class ConsumerBackgroundService : BackgroundService
                                                 {
                                                     pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
                                                     pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), message.MessageId);
-
+                                                    
                                                     //超出重试次数, 从原来的队列中删除, 并加入到异常列表
                                                     var messageErrorInfo = default(MessageErrorInfo);
                                                     var errorInfoStr = _redisClient.HGet<string>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo");
                                                     if (errorInfoStr != null)
                                                     {
-                                                        messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
-                                                        messageErrorInfo!.RetryCount += 1;
+                                                        messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr)!;
                                                     }
                                                     else
                                                     {
@@ -184,15 +184,14 @@ public class ConsumerBackgroundService : BackgroundService
                                                             GroupName = groupName,
                                                             QueueName = queueName,
                                                             ErrorMessageContent = messageContent,
-                                                            ErrorMessageTimestamp = TimeHelper.GetMillisecondTimestamp(),
-                                                            RetryCount = 1
+                                                            ErrorMessageTimestamp = TimeHelper.GetMillisecondTimestamp()
                                                         };
                                                     }
 
+                                                    var executionTimes = _redisClient.HGet<int>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ExecutionTimes");
                                                     //超出了重试次数, 则删除队列消息, 并添加到错误列表
-                                                    if (messageErrorInfo.RetryCount > automaticRetryAttempts)
+                                                    if (executionTimes > automaticRetryAttempts)
                                                     {
-                                                        messageErrorInfo.RetryCount--;
                                                         pipe.XAck(queueNameKey, groupName, data.id);
                                                         pipe.XDel(queueNameKey, data.id);
                                                         pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Failed.ToString(), "ErrorInfo", _queueConfig.Serializer.Serialize(messageErrorInfo));

@@ -36,9 +36,4 @@ public class MessageErrorInfo
     /// 错误消息发送时间
     /// </summary>
     public long ErrorMessageTimestamp { get; set; }
-
-    /// <summary>
-    /// 重试次数
-    /// </summary>
-    public int RetryCount { get; set; }
 }

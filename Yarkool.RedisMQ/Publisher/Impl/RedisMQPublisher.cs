@@ -44,11 +44,12 @@ namespace Yarkool.RedisMQ
                 tran.SAdd(cacheKeyManager.CommonQueueList, queueName);
                 tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
                 tran.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), baseMessage.CreateTimestamp, baseMessage.MessageId);
-                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", new Dictionary<string, string>
+                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", new Dictionary<string, object>
                 {
                     ["Type"] = "Common",
                     ["Status"] = MessageStatus.Pending.ToString(),
                     ["Message"] = queueConfig.Serializer.Serialize(baseMessage),
+                    ["ExecutionTimes"] = 0,
                     ["Id"] = messageId
                 });
                 tran.Exec();
@@ -116,11 +117,12 @@ namespace Yarkool.RedisMQ
                 tran.SAdd(cacheKeyManager.DelayQueueNameList, delayQueueName);
                 tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
                 tran.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), baseMessage.CreateTimestamp, baseMessage.MessageId);
-                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", new Dictionary<string, string>
+                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", new Dictionary<string, object>
                 {
                     ["Type"] = "Delay",
                     ["Status"] = MessageStatus.Pending.ToString(),
-                    ["Message"] = queueConfig.Serializer.Serialize(baseMessage)
+                    ["Message"] = queueConfig.Serializer.Serialize(baseMessage),
+                    ["ExecutionTimes"] = 0
                 });
                 tran.Exec();
 
