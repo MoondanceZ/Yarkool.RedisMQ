@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using RedisMQ.Api.Messages;
 using Yarkool.RedisMQ;
 
 namespace RedisMQ.Api.Controllers;
@@ -44,24 +45,6 @@ public class MessageController : ControllerBase
         for (int i = 0; i < 10; i++)
         {
             _ = await _publisher.PublishMessageAsync("Delay", new TestMessage
-            {
-                Input = input,
-                MessageBody = new TestMessage.TestMessageBody()
-            }, TimeSpan.FromSeconds(delaySeconds));
-
-            _ = await _publisher.PublishMessageAsync("Delay2", new TestMessage
-            {
-                Input = input,
-                MessageBody = new TestMessage.TestMessageBody()
-            }, TimeSpan.FromSeconds(delaySeconds));
-
-            _ = await _publisher.PublishMessageAsync("Delay3", new TestMessage
-            {
-                Input = input,
-                MessageBody = new TestMessage.TestMessageBody()
-            }, TimeSpan.FromSeconds(delaySeconds));
-
-            _ = await _publisher.PublishMessageAsync("Delay4", new TestMessage
             {
                 Input = input,
                 MessageBody = new TestMessage.TestMessageBody()

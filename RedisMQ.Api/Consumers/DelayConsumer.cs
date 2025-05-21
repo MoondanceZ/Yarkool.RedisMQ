@@ -1,6 +1,7 @@
-﻿using Yarkool.RedisMQ;
+﻿using RedisMQ.Api.Messages;
+using Yarkool.RedisMQ;
 
-namespace RedisMQ.Api;
+namespace RedisMQ.Api.Consumers;
 
 [RedisMQConsumer("Delay", ConsumerCount = 1, PendingTimeOut = 200, IsDelayQueueConsumer = true)]
 public class DelayConsumer(ILogger<DelayConsumer> logger) : RedisMQConsumer<TestMessage>
