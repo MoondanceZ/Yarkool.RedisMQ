@@ -26,6 +26,9 @@ internal class RouteActionProvider
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapGet(prefixMatch + "/message/list", MessageList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapPost(prefixMatch + "/message/delete", MessageDelete).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/queue/list", MessageList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/consumer/list", QueueList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/server/list", ServerList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
     #region Stats
@@ -115,8 +118,6 @@ internal class RouteActionProvider
     #region MessageList
     private async Task MessageList(HttpContext httpContext)
     {
-        var redisClient = _serviceProvider.GetService<IRedisClient>()!;
-
         var pageRequest = httpContext.Request.Query.ToObject<MessagePageRequest>();
 
         var pageIndex = pageRequest.PageIndex;
@@ -128,10 +129,10 @@ internal class RouteActionProvider
         var stop = start + pageSize - 1;
 
         var result = new List<MessageResponse>();
-        var data = redisClient.ZRevRange(key, start, stop);
+        var data = _redisClient.ZRevRange(key, start, stop);
         if (data != null)
         {
-            using var pipe = redisClient.StartPipe();
+            using var pipe = _redisClient.StartPipe();
             foreach (var item in data)
             {
                 pipe.HGetAll<string>($"{_cacheKeyManager.PublishMessageList}:{item}");
@@ -159,13 +160,11 @@ internal class RouteActionProvider
     #region MessageDelete
     private async Task MessageDelete(HttpContext httpContext)
     {
-        var redisClient = _serviceProvider.GetService<IRedisClient>()!;
-
         var idList = httpContext.Request.Body.ToObject<List<string>>();
 
         if (idList.Any())
         {
-            using var pipe = redisClient.StartPipe();
+            using var pipe = _redisClient.StartPipe();
             foreach (var id in idList)
             {
                 pipe.ZRem(_cacheKeyManager.PublishMessageIdSet, id);
@@ -184,6 +183,47 @@ internal class RouteActionProvider
         {
             await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success("请选择要删除的消息"));
         }
+    }
+    #endregion
+
+    #region QueueList
+    private async Task QueueList(HttpContext httpContext)
+    {
+        var result = _redisClient.SMembers(_cacheKeyManager.CommonQueueList).Select(x => new QueueResponse
+            {
+                QueueName = x,
+                IsDelayQueue = false
+            })
+            .Concat(_redisClient.SMembers(_cacheKeyManager.DelayQueueList).Select(x => new QueueResponse
+                {
+                    QueueName = x,
+                    IsDelayQueue = true
+                })
+            ).OrderBy(x => x.QueueName).ToList();
+
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
+    }
+    #endregion
+
+    #region ConsumerList
+    private async Task ConsumerList(HttpContext httpContext)
+    {
+        var result = _redisClient.SMembers(_cacheKeyManager.ConsumerList).OrderBy(x => x).ToList();
+
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
+    }
+    #endregion
+
+    #region ServerList
+    private async Task ServerList(HttpContext httpContext)
+    {
+        var result = _redisClient.HGetAll<DateTime>(_cacheKeyManager.ServerNodes).Select(x => new ServerResponse
+        {
+            ServerName = x.Key,
+            HeartbeatTimestamp = TimeHelper.GetMillisecondTimestamp(x.Value)
+        }).OrderByDescending(x => x.HeartbeatTimestamp).ToList();
+
+        await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
     }
     #endregion
 
