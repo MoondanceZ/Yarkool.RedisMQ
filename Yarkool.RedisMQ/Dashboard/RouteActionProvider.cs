@@ -28,6 +28,7 @@ internal class RouteActionProvider
         builder.MapPost(prefixMatch + "/message/delete", MessageDelete).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
+    #region Stats
     private async Task Stats(HttpContext httpContext)
     {
         var twentyFourHoursStatsList = new List<StatsResponse.Types.TwentyFourHoursStatsInfo>();
@@ -109,7 +110,9 @@ internal class RouteActionProvider
 
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
     }
+    #endregion
 
+    #region MessageList
     private async Task MessageList(HttpContext httpContext)
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
@@ -150,7 +153,9 @@ internal class RouteActionProvider
 
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
     }
+    #endregion
 
+    #region MessageDelete
     private async Task MessageDelete(HttpContext httpContext)
     {
         var redisClient = _serviceProvider.GetService<IRedisClient>()!;
@@ -179,6 +184,7 @@ internal class RouteActionProvider
             await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success("请选择要删除的消息"));
         }
     }
+    #endregion
 
     public Task Health(HttpContext httpContext)
     {

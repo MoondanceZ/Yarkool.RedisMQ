@@ -192,15 +192,17 @@ public class ConsumerBackgroundService : BackgroundService
                                                     //超出了重试次数, 则删除队列消息, 并添加到错误列表
                                                     if (messageErrorInfo.RetryCount > automaticRetryAttempts)
                                                     {
+                                                        messageErrorInfo.RetryCount--;
                                                         pipe.XAck(queueNameKey, groupName, data.id);
                                                         pipe.XDel(queueNameKey, data.id);
+                                                        pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Failed.ToString(), "ErrorInfo", _queueConfig.Serializer.Serialize(messageErrorInfo));
                                                         pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
-                                                        pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
+                                                        pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
                                                     }
                                                     else
                                                     {
+                                                        pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Retrying.ToString(), "ErrorInfo", _queueConfig.Serializer.Serialize(messageErrorInfo));
                                                         pipe.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
-                                                        pipe.HSet($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo", _queueConfig.Serializer.Serialize(messageErrorInfo));
                                                     }
 
                                                     pipe.EndPipe();
