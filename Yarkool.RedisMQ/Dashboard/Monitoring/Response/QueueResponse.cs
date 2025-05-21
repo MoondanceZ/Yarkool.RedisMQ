@@ -5,7 +5,7 @@ public class QueueResponse
     /// <summary>
     /// QueueName
     /// </summary>
-    public string QueueName { get; set; }
+    public string QueueName { get; set; } = string.Empty;
 
     /// <summary>
     /// IsDelayQueue
