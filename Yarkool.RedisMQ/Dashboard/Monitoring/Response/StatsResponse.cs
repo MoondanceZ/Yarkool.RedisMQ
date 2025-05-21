@@ -106,6 +106,21 @@ internal class StatsResponse
             /// MessageCount
             /// </summary>
             public long MessageCount { get; set; }
+
+            /// <summary>
+            /// RedisMQVersion
+            /// </summary>
+            public string? RedisMQVersion { get; set; } = string.Empty;
+
+            /// <summary>
+            /// RedisVersion
+            /// </summary>
+            public string RedisVersion { get; set; } = string.Empty;
+
+            /// <summary>
+            /// ServerTimestamp
+            /// </summary>
+            public long ServerTimestamp { get; set; }
         }
     }
 }

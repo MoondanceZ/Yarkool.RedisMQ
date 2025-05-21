@@ -9,7 +9,7 @@ namespace RedisMQ.Api
         {
             Console.WriteLine(message.Input);
             // throw new Exception("出错啦");
-            await Task.Delay(Random.Shared.Next(10, 100), cancellationToken);
+            await Task.Delay(Random.Shared.Next(100, 300), cancellationToken);
 
             // IsAutoAck = false, manual ack
             await messageHandler.AckAsync(cancellationToken);

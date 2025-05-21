@@ -1,4 +1,5 @@
-﻿using FreeRedis;
+﻿using System.Reflection;
+using FreeRedis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -16,6 +17,7 @@ internal class RouteActionProvider
     private readonly IRedisClient _redisClient = builder.ServiceProvider.GetService<IRedisClient>()!;
     private readonly CacheKeyManager _cacheKeyManager = builder.ServiceProvider.GetService<CacheKeyManager>()!;
     private readonly QueueConfig _queueConfig = builder.ServiceProvider.GetService<QueueConfig>()!;
+    private static readonly Assembly _assembly = Assembly.GetExecutingAssembly();
 
     public void MapDashboardRoutes()
     {
@@ -95,7 +97,10 @@ internal class RouteActionProvider
                 MessageCount = (long)realTimeResults[3],
                 QueueCount = (long)realTimeResults[6] + (long)realTimeResults[7],
                 ConsumerCount = (long)realTimeResults[8],
-                ServerCount = (long)realTimeResults[9]
+                ServerCount = (long)realTimeResults[9],
+                ServerTimestamp = TimeHelper.GetMillisecondTimestamp(),
+                RedisVersion = _redisClient.Info("server").Split("\r\n").FirstOrDefault(x => x.StartsWith("redis_version:"))?.Replace("redis_version:", "") ?? "unknown",
+                RedisMQVersion = (_assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown").Split("+").FirstOrDefault()
             }
         };
 
