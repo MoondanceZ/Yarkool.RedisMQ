@@ -11,4 +11,9 @@ public class QueueResponse
     /// IsDelayQueue
     /// </summary>
     public bool IsDelayQueue { get; set; }
+
+    /// <summary>
+    /// QueueStatus
+    /// </summary>
+    public QueueStatus Status { get; set; }
 }
