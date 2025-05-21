@@ -25,7 +25,7 @@ internal class RouteActionProvider
 
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapGet(prefixMatch + "/message/list", MessageList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
-        builder.MapGet(prefixMatch + "/message/delete", MessageDelete).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapPost(prefixMatch + "/message/delete", MessageDelete).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
     private async Task Stats(HttpContext httpContext)
@@ -75,6 +75,7 @@ internal class RouteActionProvider
         realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing)); //11
         realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying)); //12
         realTimePipe.ZCard(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed)); //13
+        realTimePipe.ZCard(_cacheKeyManager.PublishMessageIdSet); //14
         var realTimeResults = realTimePipe.EndPipe();
 
         var result = new StatsResponse
@@ -90,7 +91,8 @@ internal class RouteActionProvider
                 PendingCount = (long)realTimeResults[10],
                 ProcessingCount = (long)realTimeResults[11],
                 RetryingCount = (long)realTimeResults[12],
-                CompletedCount = (long)realTimeResults[13]
+                CompletedCount = (long)realTimeResults[13],
+                AllCount = (long)realTimeResults[14],
             },
             TwentyFourHoursStats = twentyFourHoursStatsList,
             ServerInfo = new StatsResponse.Types.ServerInfo
@@ -166,7 +168,7 @@ internal class RouteActionProvider
                 pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), id);
                 pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), id);
                 pipe.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), id);
-                pipe.HDel($"{_cacheKeyManager.PublishMessageList}:{id}");
+                pipe.Del($"{_cacheKeyManager.PublishMessageList}:{id}");
             }
 
             pipe.EndPipe();

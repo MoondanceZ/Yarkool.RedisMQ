@@ -70,6 +70,11 @@ internal class StatsResponse
             /// FailedCount
             /// </summary>
             public long FailedCount { get; set; }
+
+            /// <summary>
+            /// AllCount
+            /// </summary>
+            public long AllCount { get; set; }
         }
 
         public class TwentyFourHoursStatsInfo

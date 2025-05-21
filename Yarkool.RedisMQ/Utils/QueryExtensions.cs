@@ -28,14 +28,10 @@ public static class QueryExtensions
 
     public static T ToObject<T>(this Stream stream) where T : new()
     {
-        stream.Position = 0;
-
         using var reader = new StreamReader(stream, Encoding.UTF8);
-        var content = (reader.ReadToEnd()).TrimEnd();
+        var content = (reader.ReadToEndAsync().ConfigureAwait(false).GetAwaiter().GetResult()).TrimEnd();
 
         var obj = JsonSerializer.Deserialize<T>(content);
-
-        stream.Position = 0;
 
         return obj!;
     }
