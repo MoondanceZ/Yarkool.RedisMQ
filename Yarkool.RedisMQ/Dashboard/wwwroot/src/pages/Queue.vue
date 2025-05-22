@@ -24,7 +24,7 @@
               </template>
               <template #item.isDelayQueue="{ item }">
                 <v-chip
-                  :color="item.isDelayQueue ? 'warning' : 'success'"
+                  :color="item.isDelayQueue ? 'purple' : 'teal'"
                   size="small"
                 >
                   {{ item.isDelayQueue ? '延迟队列' : '普通队列' }}
