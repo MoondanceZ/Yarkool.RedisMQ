@@ -85,6 +85,12 @@
   let statsTimer: ReturnType<typeof setInterval> | null = null
 
   onMounted(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const accessToken = searchParams.get('access_token');
+    if (accessToken) {
+      localStorage.setItem('token', accessToken)
+    }
+
     // 立即获取一次数据
     store.fetchStats()
 

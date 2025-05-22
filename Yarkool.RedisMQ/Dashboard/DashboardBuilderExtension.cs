@@ -41,7 +41,7 @@ internal static class DashboardBuilderExtension
                 var redirectUrl = string.IsNullOrEmpty(path) || path.EndsWith("/") ? "index.html" : $"{path.Split('/').Last()}/index.html";
 
                 httpContext.Response.StatusCode = 301;
-                httpContext.Response.Headers["Location"] = redirectUrl;
+                httpContext.Response.Headers["Location"] = $"{redirectUrl}{httpContext.Request.QueryString.Value}";
                 return Task.CompletedTask;
             }).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
 
