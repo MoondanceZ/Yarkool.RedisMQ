@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using FreeRedis;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -44,108 +45,104 @@ namespace Yarkool.RedisMQ
             }
         }
 
+        private readonly string _serverName = $"{Environment.MachineName}:{Process.GetCurrentProcess().Id}";
+
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
             {
                 var queueName = consumerExecutorDescriptor.QueueName;
                 var groupName = consumerExecutorDescriptor.GroupName;
-                var consumerName = consumerExecutorDescriptor.ConsumerName;
                 var automaticRetryAttempts = consumerExecutorDescriptor.AutomaticRetryAttempts;
                 var pendingTimeOut = consumerExecutorDescriptor.PendingTimeOut * 1000;
                 var queueNameKey = _cacheKeyManager.GetQueueName(queueName);
 
-                for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
+                Task.Run(async () =>
                 {
-                    var consumerIndex = i + 1;
-                    var curConsumerName = consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount > 1 ? $"{consumerName}:{consumerIndex}" : consumerName;
-                    Task.Run(async () =>
+                    while (!stoppingToken.IsCancellationRequested)
                     {
-                        while (!stoppingToken.IsCancellationRequested)
+                        try
                         {
-                            try
+                            var timeOutMessageIdTimestamp = TimeHelper.GetMillisecondTimestamp() - pendingTimeOut;
+                            var timeOutPendingResults = await _redisClient.XPendingAsync(queueNameKey, groupName, "0-0", $"{timeOutMessageIdTimestamp}-0", 50).ConfigureAwait(false);
+                            if (timeOutPendingResults != null && timeOutPendingResults.Length != 0)
                             {
-                                var timeOutMessageIdTimestamp = TimeHelper.GetMillisecondTimestamp() - pendingTimeOut;
-                                var timeOutPendingResults = await _redisClient.XPendingAsync(queueNameKey, groupName, "0-0", $"{timeOutMessageIdTimestamp}-0", 50, curConsumerName).ConfigureAwait(false);
-                                if (timeOutPendingResults != null && timeOutPendingResults.Length != 0)
+                                foreach (var result in timeOutPendingResults.AsParallel())
                                 {
-                                    foreach (var result in timeOutPendingResults.AsParallel())
+                                    var messageId = result.id;
+                                    var messageRange = await _redisClient.XRangeAsync(queueNameKey, messageId, messageId).ConfigureAwait(false);
+                                    if (messageRange is not { Length: > 0 })
+                                        continue;
+                                    var entry = messageRange[0];
+                                    var message = entry.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
+                                    if (message != null)
                                     {
-                                        var messageId = result.id;
-                                        var messageRange = await _redisClient.XRangeAsync(queueNameKey, messageId, messageId).ConfigureAwait(false);
-                                        if (messageRange is not { Length: > 0 })
-                                            continue;
-                                        var entry = messageRange[0];
-                                        var message = entry.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
-                                        if (message != null)
+                                        // 再判一次是否超时
+                                        var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > pendingTimeOut;
+                                        if (isTimeOutMessage)
                                         {
-                                            // 再判一次是否超时
-                                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - message.CreateTimestamp > pendingTimeOut;
-                                            if (isTimeOutMessage)
+                                            message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
+
+                                            //分为2种情况, 普通的未正常ACK超时, 一种是错误超时
+                                            //错误超时
+                                            var messageErrorInfo = default(MessageErrorInfo);
+                                            var errorInfoStr = _redisClient.HGet<string>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo");
+                                            if (errorInfoStr != null)
+                                                messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
+
+                                            if (messageErrorInfo != null)
                                             {
-                                                message.CreateTimestamp = TimeHelper.GetMillisecondTimestamp();
-
-                                                //分为2种情况, 普通的未正常ACK超时, 一种是错误超时
-                                                //错误超时
-                                                var messageErrorInfo = default(MessageErrorInfo);
-                                                var errorInfoStr = _redisClient.HGet<string>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ErrorInfo");
-                                                if (errorInfoStr != null)
-                                                    messageErrorInfo = _queueConfig.Serializer.Deserialize<MessageErrorInfo>(errorInfoStr);
-
-                                                if (messageErrorInfo != null)
+                                                var executionTimes = _redisClient.HGet<int>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ExecutionTimes");
+                                                //超出了重试次数, 则删除队列消息, 并添加到错误列表
+                                                if (executionTimes > automaticRetryAttempts)
                                                 {
-                                                    var executionTimes = _redisClient.HGet<int>($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "ExecutionTimes");
-                                                    //超出了重试次数, 则删除队列消息, 并添加到错误列表
-                                                    if (executionTimes > automaticRetryAttempts)
-                                                    {
-                                                        using var pipeError = _redisClient.StartPipe();
-                                                        pipeError.XAck(queueNameKey, groupName, entry.id);
-                                                        pipeError.XDel(queueNameKey, entry.id);
-                                                        pipeError.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
-                                                        pipeError.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
-                                                        pipeError.EndPipe();
-                                                        continue;
-                                                    }
+                                                    using var pipeError = _redisClient.StartPipe();
+                                                    pipeError.XAck(queueNameKey, groupName, entry.id);
+                                                    pipeError.XDel(queueNameKey, entry.id);
+                                                    pipeError.ZRem(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
+                                                    pipeError.ZAdd(_cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), _queueConfig.Serializer.Serialize(message));
+                                                    pipeError.EndPipe();
+                                                    continue;
                                                 }
-
-                                                var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
-
-                                                using var pipe = _redisClient.StartPipe();
-                                                pipe.XAck(queueNameKey, groupName, entry.id);
-                                                pipe.XDel(queueNameKey, entry.id);
-                                                pipe.XAdd(queueNameKey, data);
-                                                var res = pipe.EndPipe();
-                                                await _redisClient.HSetAsync($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Id", res[2].ToString());
-
-                                                _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
                                             }
+
+                                            var data = _queueConfig.Serializer.Deserialize<Dictionary<string, object>>(_queueConfig.Serializer.Serialize(message));
+
+                                            using var pipe = _redisClient.StartPipe();
+                                            pipe.XAck(queueNameKey, groupName, entry.id);
+                                            pipe.XDel(queueNameKey, entry.id);
+                                            pipe.XAdd(queueNameKey, data);
+                                            var res = pipe.EndPipe();
+                                            await _redisClient.HSetAsync($"{_cacheKeyManager.PublishMessageList}:{message.MessageId}", "Id", res[2].ToString());
+
+                                            _logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);
                                         }
-                                        else
+                                    }
+                                    else
+                                    {
+                                        long.TryParse(messageRange[0].id.Split("-").FirstOrDefault(), out var messageTime);
+                                        var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > pendingTimeOut;
+                                        if (isTimeOutMessage)
                                         {
-                                            long.TryParse(messageRange[0].id.Split("-").FirstOrDefault(), out var messageTime);
-                                            var isTimeOutMessage = TimeHelper.GetMillisecondTimestamp() - messageTime > pendingTimeOut;
-                                            if (isTimeOutMessage)
-                                            {
-                                                using var pipe = _redisClient.StartPipe();
-                                                pipe.XAck(queueNameKey, groupName, entry.id);
-                                                pipe.XDel(queueNameKey, entry.id);
-                                                pipe.EndPipe();
-                                            }
+                                            using var pipe = _redisClient.StartPipe();
+                                            pipe.XAck(queueNameKey, groupName, entry.id);
+                                            pipe.XDel(queueNameKey, entry.id);
+                                            pipe.EndPipe();
                                         }
                                     }
                                 }
-                                else
-                                {
-                                    await Task.Delay(5000, stoppingToken).ConfigureAwait(false);
-                                }
                             }
-                            catch (Exception ex)
+                            else
                             {
-                                _logger?.LogError(ex, "Handle non ack data exception!");
+                                await Task.Delay(5000, stoppingToken).ConfigureAwait(false);
                             }
                         }
-                    }, stoppingToken);
-                }
+                        catch (Exception ex)
+                        {
+                            _logger?.LogError(ex, "Handle non ack data exception!");
+                        }
+                    }
+                }, stoppingToken);
             }
 
             return Task.CompletedTask;
