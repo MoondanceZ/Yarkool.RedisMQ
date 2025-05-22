@@ -3,7 +3,7 @@ using Yarkool.RedisMQ;
 
 namespace RedisMQ.Api.Consumers;
 
-[RedisMQConsumer("Test", ConsumerCount = 1, PendingTimeOut = 30, PrefetchCount = 100, IsAutoAck = false, AutomaticRetryAttempts = 1)]
+[RedisMQConsumer("Test", ConsumerCount = 2, PendingTimeOut = 30, PrefetchCount = 100, IsAutoAck = false, AutomaticRetryAttempts = 1)]
 public class TestConsumer : RedisMQConsumer<TestMessage>
 {
     public override async Task OnMessageAsync(TestMessage message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken = default)

@@ -218,7 +218,7 @@ internal class RouteActionProvider
             return new ConsumerResponse
             {
                 ConsumerName = x,
-                QueueName = data[1],
+                QueueName = data[2],
                 ServerName = data[0]
             };
         }).OrderBy(x => x.QueueName).ThenBy(x => x.ServerName).ToList();
