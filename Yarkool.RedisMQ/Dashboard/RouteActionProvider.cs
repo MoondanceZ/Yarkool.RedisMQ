@@ -219,7 +219,7 @@ internal class RouteActionProvider
             {
                 ConsumerName = x,
                 QueueName = data[2],
-                ServerName = data[0]
+                ServerName = $"{data[0]}:{data[1]}"
             };
         }).OrderBy(x => x.QueueName).ThenBy(x => x.ServerName).ToList();
 
