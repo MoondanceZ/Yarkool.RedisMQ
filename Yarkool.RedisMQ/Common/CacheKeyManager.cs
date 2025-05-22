@@ -26,6 +26,8 @@ public class CacheKeyManager(QueueConfig queueConfig)
 
     public string PublishMessageIdSet => ParseCacheKey("Message:IdSet:Publish");
 
+    public string ReadPendingLock => ParseCacheKey(nameof(ReadPendingLock));
+
     public string ParseCacheKey(string key)
     {
         if (string.IsNullOrWhiteSpace(queueConfig.RedisPrefix))
