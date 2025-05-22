@@ -13,7 +13,6 @@ internal class RouteActionProvider
     DashboardOptions options
 )
 {
-    private readonly IServiceProvider _serviceProvider = builder.ServiceProvider;
     private readonly IRedisClient _redisClient = builder.ServiceProvider.GetService<IRedisClient>()!;
     private readonly CacheKeyManager _cacheKeyManager = builder.ServiceProvider.GetService<CacheKeyManager>()!;
     private readonly QueueConfig _queueConfig = builder.ServiceProvider.GetService<QueueConfig>()!;
@@ -26,8 +25,8 @@ internal class RouteActionProvider
         builder.MapGet(prefixMatch + "/stats", Stats).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapGet(prefixMatch + "/message/list", MessageList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapPost(prefixMatch + "/message/delete", MessageDelete).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
-        builder.MapGet(prefixMatch + "/queue/list", MessageList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
-        builder.MapGet(prefixMatch + "/consumer/list", QueueList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/queue/list", QueueList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
+        builder.MapGet(prefixMatch + "/consumer/list", ConsumerList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
         builder.MapGet(prefixMatch + "/server/list", ServerList).AllowAnonymousIf(options.AllowAnonymousExplicit, options.AuthorizationPolicy);
     }
 
@@ -189,15 +188,20 @@ internal class RouteActionProvider
     #region QueueList
     private async Task QueueList(HttpContext httpContext)
     {
+        var consumerList = _redisClient.SMembers(_cacheKeyManager.ConsumerList).OrderBy(x => x).ToList();
         var result = _redisClient.SMembers(_cacheKeyManager.CommonQueueList).Select(x => new QueueResponse
             {
                 QueueName = x,
-                IsDelayQueue = false
+                IsDelayQueue = false,
+                ConsumerList = consumerList.Where(s => s.Contains($":{x}")),
+                Status = QueueStatus.Processing
             })
             .Concat(_redisClient.SMembers(_cacheKeyManager.DelayQueueList).Select(x => new QueueResponse
                 {
                     QueueName = x,
-                    IsDelayQueue = true
+                    IsDelayQueue = true,
+                    ConsumerList = consumerList.Where(s => s.Contains($":{x}")),
+                    Status = QueueStatus.Processing
                 })
             ).OrderBy(x => x.QueueName).ToList();
 
@@ -208,7 +212,16 @@ internal class RouteActionProvider
     #region ConsumerList
     private async Task ConsumerList(HttpContext httpContext)
     {
-        var result = _redisClient.SMembers(_cacheKeyManager.ConsumerList).OrderBy(x => x).ToList();
+        var result = _redisClient.SMembers(_cacheKeyManager.ConsumerList).Select(x =>
+        {
+            var data = x.Split(":");
+            return new ConsumerResponse
+            {
+                ConsumerName = x,
+                QueueName = data[1],
+                ServerName = data[0]
+            };
+        }).OrderBy(x => x.QueueName).ThenBy(x => x.ServerName).ToList();
 
         await httpContext.Response.WriteAsJsonAsync(BaseResponse.Success(null, result));
     }

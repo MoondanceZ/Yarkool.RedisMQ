@@ -74,8 +74,8 @@ public class ConsumerBackgroundService : BackgroundService
             for (var i = 0; i < consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount; i++)
             {
                 var consumerIndex = i + 1;
-                var curConsumerName = consumerExecutorDescriptor.RedisMQConsumerAttribute.ConsumerCount > 1 ? $"{consumerName}:{consumerIndex}" : consumerName;
-                _redisClient.SAdd(_cacheKeyManager.ConsumerList, $"{_serverName}:{curConsumerName}");
+                var curConsumerName = $"{_serverName}:{consumerName}:{consumerIndex}";
+                _redisClient.SAdd(_cacheKeyManager.ConsumerList, curConsumerName);
                 Task.Run(async () =>
                 {
                     _logger.LogInformation($"{curConsumerName} subscribing");

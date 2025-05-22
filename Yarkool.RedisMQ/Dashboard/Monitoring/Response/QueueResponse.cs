@@ -16,4 +16,9 @@ public class QueueResponse
     /// QueueStatus
     /// </summary>
     public QueueStatus Status { get; set; }
+
+    /// <summary>
+    /// ConsumerList
+    /// </summary>
+    public IEnumerable<string> ConsumerList { get; set; } = [];
 }
