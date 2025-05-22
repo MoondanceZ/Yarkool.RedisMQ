@@ -14,6 +14,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './',
   server: {
     port: 3000,
     proxy: {

@@ -21,7 +21,6 @@ internal static class DashboardBuilderExtension
 
         var provider = app.ApplicationServices;
         var queueConfig = provider.GetService<QueueConfig>();
-        var cacheKeyManager = provider.GetService<CacheKeyManager>()!;
 
         var options = queueConfig?.DashboardOptions;
 
