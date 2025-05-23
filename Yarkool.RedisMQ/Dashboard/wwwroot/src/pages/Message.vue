@@ -114,6 +114,10 @@
                     {{ MessageStatus[selectedMessage?.status] }}
                   </v-chip>
                 </v-col>
+                <v-col v-if="selectedMessage?.message.delayTime > 0" cols="12" sm="4">
+                  <strong>延迟时间：</strong>
+                  {{ selectedMessage?.message.delayTime }}秒
+                </v-col>
                 <v-col cols="12" sm="6">
                   <strong>创建时间：</strong>
                   {{ selectedMessage?.message.createTimestamp ? new Date(selectedMessage.message.createTimestamp).toLocaleString() : '' }}
