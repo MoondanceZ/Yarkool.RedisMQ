@@ -47,7 +47,7 @@ namespace Yarkool.RedisMQ
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
+            foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors().AsParallel())
             {
                 var queueName = consumerExecutorDescriptor.QueueName;
                 var groupName = consumerExecutorDescriptor.GroupName;

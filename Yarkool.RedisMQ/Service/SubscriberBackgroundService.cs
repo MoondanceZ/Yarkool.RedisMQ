@@ -51,7 +51,7 @@ public class ConsumerBackgroundService : BackgroundService
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
+        foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors().AsParallel())
         {
             var consumerType = consumerExecutorDescriptor.ConsumerTypeInfo;
             var messageType = consumerExecutorDescriptor.MessageTypeInfo;
