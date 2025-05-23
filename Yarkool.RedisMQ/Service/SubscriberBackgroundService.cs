@@ -262,7 +262,7 @@ public class ConsumerBackgroundService : BackgroundService
                 var messageMemberList = messageMemberBag.OrderBy(x => x.Score).ToList();
                 if (messageMemberList.Any())
                 {
-                    foreach (var item in messageMemberList.AsParallel())
+                    foreach (var item in messageMemberList)
                     {
                         var baseMessage = _queueConfig.Serializer.Deserialize<BaseMessage>(item.Member ?? "");
                         if (baseMessage == null)

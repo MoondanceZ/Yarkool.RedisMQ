@@ -122,7 +122,7 @@
                     {{ MessageStatus[selectedMessage?.status] }}
                   </v-chip>
                 </v-col>
-                <v-col v-if="selectedMessage?.message.delayTime > 0" cols="12" sm="4">
+                <v-col v-if="selectedMessage && selectedMessage?.message.delayTime > 0" cols="12" sm="4">
                   <strong>延迟时间：</strong>
                   {{ selectedMessage?.message.delayTime }}秒
                 </v-col>

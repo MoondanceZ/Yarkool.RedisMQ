@@ -45,8 +45,6 @@ namespace Yarkool.RedisMQ
             }
         }
 
-        private readonly string _serverName = $"{Environment.MachineName}:{Process.GetCurrentProcess().Id}";
-
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             foreach (var consumerExecutorDescriptor in _consumerServiceSelector.GetConsumerExecutorDescriptors())
@@ -72,7 +70,7 @@ namespace Yarkool.RedisMQ
                                 var timeOutPendingResults = await _redisClient.XPendingAsync(queueNameKey, groupName, "0-0", $"{timeOutMessageIdTimestamp}-0", 50).ConfigureAwait(false);
                                 if (timeOutPendingResults != null && timeOutPendingResults.Length != 0)
                                 {
-                                    foreach (var result in timeOutPendingResults.AsParallel())
+                                    foreach (var result in timeOutPendingResults)
                                     {
                                         var messageId = result.id;
                                         var messageRange = await _redisClient.XRangeAsync(queueNameKey, messageId, messageId).ConfigureAwait(false);
