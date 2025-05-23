@@ -53,6 +53,14 @@
                 {{ MessageStatus[item.status] }}
               </v-chip>
             </template>
+            <template #item.delay="{ item }">
+              <span v-if="item.message.delayTime > 0">
+                延迟
+                <span class="text-info mx-1">{{ item.message.delayTime }}</span>
+                秒
+              </span>
+              <span v-else>-</span>
+            </template>
             <template #item.createTime="{ item }">
               {{ new Date(item.message.createTimestamp).toLocaleString() }}
             </template>
@@ -193,6 +201,7 @@
     { title: '消息ID', key: 'messageId' },
     { title: '队列', key: 'queueName' },
     { title: '状态', key: 'status', align: 'center' },
+    { title: '延迟', key: 'delay', align: 'center' },
     { title: '创建时间', key: 'createTime', width: '160px', align: 'center' },
     { title: '操作', key: 'actions', sortable: false, width: '100px', align: 'center' },
   ]);
