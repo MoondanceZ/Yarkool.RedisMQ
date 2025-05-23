@@ -4,7 +4,7 @@
       <v-col cols="9">
         <v-card class="pa-2" elevation="2">
           <v-card-title>实时数据</v-card-title>
-          <div ref="chartRef" :style="{ height: '302px', width: '100%' }" />
+          <div ref="chartRef" :style="{ height: '242px', width: '100%' }" />
         </v-card>
       </v-col>
       <v-col cols="3">
@@ -16,7 +16,7 @@
               @click="router.push('/queue')"
             >
               <v-card-title class="text-subtitle-1">队列数量</v-card-title>
-              <v-card-text class="text-h4 text-center text-primary">{{ stats.serverInfo?.queueCount || 0 }}</v-card-text>
+              <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.queueCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
           <v-col cols="6">
@@ -26,7 +26,7 @@
               @click="router.push('/queue')"
             >
               <v-card-title class="text-subtitle-1">消费者数量</v-card-title>
-              <v-card-text class="text-h4 text-center text-primary">{{ stats.serverInfo?.consumerCount || 0 }}</v-card-text>
+              <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.consumerCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
           <v-col cols="6">
@@ -36,7 +36,7 @@
               @click="router.push('/server')"
             >
               <v-card-title class="text-subtitle-1">服务器数量</v-card-title>
-              <v-card-text class="text-h4 text-center text-primary">{{ stats.serverInfo?.serverCount || 0 }}</v-card-text>
+              <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.serverCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
           <v-col cols="6">
@@ -45,7 +45,7 @@
               @click="router.push('/message')"
             >
               <v-card-title class="text-subtitle-1">消息数量</v-card-title>
-              <v-card-text class="text-h4 text-center text-primary">{{ stats.realTimeStats?.pendingCount || 0 }}</v-card-text>
+              <v-card-text class="text-h6 text-center text-primary">{{ stats.realTimeStats?.pendingCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
           <v-col cols="6">
@@ -54,7 +54,7 @@
               @click="router.push('/message?status=4')"
             >
               <v-card-title class="text-subtitle-1">错误数量</v-card-title>
-              <v-card-text class="text-h4 text-center text-red">{{ stats.realTimeStats?.failedCount || 0 }}</v-card-text>
+              <v-card-text class="text-h6 text-center text-red">{{ stats.realTimeStats?.failedCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
           <v-col cols="6">
@@ -63,7 +63,7 @@
               @click="router.push('/message')"
             >
               <v-card-title class="text-subtitle-1">Ack</v-card-title>
-              <v-card-text class="text-h4 text-center text-green">{{ ackSpeed }}/s</v-card-text>
+              <v-card-text class="text-h6 text-center text-green">{{ ackSpeed }}/s</v-card-text>
             </v-card>
           </v-col>
         </v-row>

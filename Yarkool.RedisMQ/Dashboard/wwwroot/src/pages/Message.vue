@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { messageApi } from '@/apis';
   import type MessageResponse from '@/apis/response/MessageResponse';
@@ -357,12 +357,6 @@
       },
     })
   }
-
-  onMounted(() => {
-    // 初始化时设置状态
-    selectedStatus.value = routeStatus.value
-    fetchMessages()
-  })
 </script>
 
 <style scoped>
