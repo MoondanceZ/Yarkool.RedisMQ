@@ -494,8 +494,8 @@
 }
 
 .message-list-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 0;
   overflow: hidden;
 }
@@ -532,23 +532,24 @@
 }
 
 .message-table-wrap {
-  flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .message-table {
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
   height: 100%;
-  width: 100%;
+  min-height: 0;
   min-width: 0;
+  width: 100%;
 }
 
 .message-table :deep(.v-table__wrapper) {
   flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
 }
 
@@ -584,13 +585,14 @@
 }
 
 .message-pagination {
-  flex: 0 0 auto;
   display: flex;
   align-items: center;
+  min-height: 64px;
   justify-content: flex-end;
   gap: 16px;
   padding: 10px 16px;
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  background: rgb(var(--v-theme-surface));
 }
 
 .page-size-control {

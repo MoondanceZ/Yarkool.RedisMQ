@@ -1,0 +1,540 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e10]: Redis MQ Web
+      - generic [ref=e11]:
+        - link "首页" [ref=e12] [cursor=pointer]:
+          - /url: "#/"
+          - generic [ref=e13]:
+            - generic [ref=e14]: 󰋜
+            - generic [ref=e15]: 首页
+        - link "消息" [ref=e16] [cursor=pointer]:
+          - /url: "#/message"
+          - generic [ref=e17]:
+            - generic [ref=e18]: 󰍡
+            - generic [ref=e19]: 消息
+        - link "队列" [ref=e20] [cursor=pointer]:
+          - /url: "#/queue"
+          - generic [ref=e21]:
+            - generic [ref=e22]: 󰆼
+            - generic [ref=e23]: 队列
+        - link "服务器" [ref=e24] [cursor=pointer]:
+          - /url: "#/server"
+          - generic [ref=e25]:
+            - generic [ref=e26]: 󰒋
+            - generic [ref=e27]: 服务器
+        - button [ref=e28] [cursor=pointer]:
+          - generic [ref=e30]: 󰖔
+  - main [ref=e31]:
+    - generic [ref=e34]:
+      - generic [ref=e36]:
+        - generic [ref=e37]: 消息状态
+        - listbox [ref=e38]:
+          - generic [ref=e41] [cursor=pointer]:
+            - generic [ref=e42]: All
+            - generic [ref=e44]: "50410"
+          - generic [ref=e47] [cursor=pointer]:
+            - generic [ref=e48]: Pending
+            - generic [ref=e50]: "0"
+          - generic [ref=e53] [cursor=pointer]:
+            - generic [ref=e54]: Processing
+            - generic [ref=e56]: "0"
+          - generic [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]: Retrying
+            - generic [ref=e62]: "0"
+          - generic [ref=e65] [cursor=pointer]:
+            - generic [ref=e66]: Completed
+            - generic [ref=e68]: "50389"
+          - generic [ref=e71] [cursor=pointer]:
+            - generic [ref=e72]: Failed
+            - generic [ref=e74]: "21"
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]: 消息列表
+          - button "删除" [disabled]:
+            - generic:
+              - generic: 󰆴
+              - text: 删除
+        - table [ref=e82]:
+          - rowgroup [ref=e83]:
+            - row "消息ID 队列 状态 延迟 创建时间 操作" [ref=e84]:
+              - columnheader [ref=e85]:
+                - generic [ref=e88]:
+                  - generic [ref=e89]: 󰄱
+                  - checkbox [ref=e90] [cursor=pointer]
+              - columnheader "消息ID" [ref=e91]:
+                - generic [ref=e92]:
+                  - generic [ref=e93]: 消息ID
+                  - generic [ref=e94]: 󰁝
+              - columnheader "队列" [ref=e95]:
+                - generic [ref=e96]:
+                  - generic [ref=e97]: 队列
+                  - generic [ref=e98]: 󰁝
+              - columnheader "状态" [ref=e99]:
+                - generic [ref=e100]:
+                  - generic [ref=e101]: 状态
+                  - generic [ref=e102]: 󰁝
+              - columnheader "延迟" [ref=e103]:
+                - generic [ref=e104]:
+                  - generic [ref=e105]: 延迟
+                  - generic [ref=e106]: 󰁝
+              - columnheader "创建时间" [ref=e107]:
+                - generic [ref=e108]:
+                  - generic [ref=e109]: 创建时间
+                  - generic [ref=e110]: 󰁝
+              - columnheader "操作" [ref=e111]:
+                - generic [ref=e113]: 操作
+          - rowgroup [ref=e114]:
+            - row "6e1e1d5409464b8894323247ccaedae2 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e115]:
+              - cell [ref=e116]:
+                - generic [ref=e119]:
+                  - generic [ref=e120]: 󰄱
+                  - checkbox [ref=e121] [cursor=pointer]
+              - cell "6e1e1d5409464b8894323247ccaedae2" [ref=e122]:
+                - generic [ref=e123]: 6e1e1d5409464b8894323247ccaedae2
+              - cell "Delay" [ref=e124]
+              - cell "Completed" [ref=e125]:
+                - generic [ref=e127]: Completed
+              - cell "30秒" [ref=e128]:
+                - generic [ref=e130]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e131]
+              - cell "删除 查看" [ref=e132]:
+                - generic [ref=e133]:
+                  - button "删除" [ref=e134] [cursor=pointer]:
+                    - generic [ref=e135]: 删除
+                  - separator [ref=e136]
+                  - button "查看" [ref=e137] [cursor=pointer]:
+                    - generic [ref=e138]: 查看
+            - row "1967b9bfde854893982e173944887fb4 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e139]:
+              - cell [ref=e140]:
+                - generic [ref=e143]:
+                  - generic [ref=e144]: 󰄱
+                  - checkbox [ref=e145] [cursor=pointer]
+              - cell "1967b9bfde854893982e173944887fb4" [ref=e146]:
+                - generic [ref=e147]: 1967b9bfde854893982e173944887fb4
+              - cell "Delay" [ref=e148]
+              - cell "Completed" [ref=e149]:
+                - generic [ref=e151]: Completed
+              - cell "30秒" [ref=e152]:
+                - generic [ref=e154]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e155]
+              - cell "删除 查看" [ref=e156]:
+                - generic [ref=e157]:
+                  - button "删除" [ref=e158] [cursor=pointer]:
+                    - generic [ref=e159]: 删除
+                  - separator [ref=e160]
+                  - button "查看" [ref=e161] [cursor=pointer]:
+                    - generic [ref=e162]: 查看
+            - row "be8b02085a38437c952d58f8bb562d9e Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e163]:
+              - cell [ref=e164]:
+                - generic [ref=e167]:
+                  - generic [ref=e168]: 󰄱
+                  - checkbox [ref=e169] [cursor=pointer]
+              - cell "be8b02085a38437c952d58f8bb562d9e" [ref=e170]:
+                - generic [ref=e171]: be8b02085a38437c952d58f8bb562d9e
+              - cell "Delay" [ref=e172]
+              - cell "Completed" [ref=e173]:
+                - generic [ref=e175]: Completed
+              - cell "30秒" [ref=e176]:
+                - generic [ref=e178]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e179]
+              - cell "删除 查看" [ref=e180]:
+                - generic [ref=e181]:
+                  - button "删除" [ref=e182] [cursor=pointer]:
+                    - generic [ref=e183]: 删除
+                  - separator [ref=e184]
+                  - button "查看" [ref=e185] [cursor=pointer]:
+                    - generic [ref=e186]: 查看
+            - row "ce5c3187361445a18bf13c48f1260456 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e187]:
+              - cell [ref=e188]:
+                - generic [ref=e191]:
+                  - generic [ref=e192]: 󰄱
+                  - checkbox [ref=e193] [cursor=pointer]
+              - cell "ce5c3187361445a18bf13c48f1260456" [ref=e194]:
+                - generic [ref=e195]: ce5c3187361445a18bf13c48f1260456
+              - cell "Delay" [ref=e196]
+              - cell "Completed" [ref=e197]:
+                - generic [ref=e199]: Completed
+              - cell "30秒" [ref=e200]:
+                - generic [ref=e202]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e203]
+              - cell "删除 查看" [ref=e204]:
+                - generic [ref=e205]:
+                  - button "删除" [ref=e206] [cursor=pointer]:
+                    - generic [ref=e207]: 删除
+                  - separator [ref=e208]
+                  - button "查看" [ref=e209] [cursor=pointer]:
+                    - generic [ref=e210]: 查看
+            - row "f9948176920f4453831172ad6a673366 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e211]:
+              - cell [ref=e212]:
+                - generic [ref=e215]:
+                  - generic [ref=e216]: 󰄱
+                  - checkbox [ref=e217] [cursor=pointer]
+              - cell "f9948176920f4453831172ad6a673366" [ref=e218]:
+                - generic [ref=e219]: f9948176920f4453831172ad6a673366
+              - cell "Delay" [ref=e220]
+              - cell "Completed" [ref=e221]:
+                - generic [ref=e223]: Completed
+              - cell "30秒" [ref=e224]:
+                - generic [ref=e226]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e227]
+              - cell "删除 查看" [ref=e228]:
+                - generic [ref=e229]:
+                  - button "删除" [ref=e230] [cursor=pointer]:
+                    - generic [ref=e231]: 删除
+                  - separator [ref=e232]
+                  - button "查看" [ref=e233] [cursor=pointer]:
+                    - generic [ref=e234]: 查看
+            - row "8d21b822a40e4076b88ccbdf4be1a2bc Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e235]:
+              - cell [ref=e236]:
+                - generic [ref=e239]:
+                  - generic [ref=e240]: 󰄱
+                  - checkbox [ref=e241] [cursor=pointer]
+              - cell "8d21b822a40e4076b88ccbdf4be1a2bc" [ref=e242]:
+                - generic [ref=e243]: 8d21b822a40e4076b88ccbdf4be1a2bc
+              - cell "Delay" [ref=e244]
+              - cell "Completed" [ref=e245]:
+                - generic [ref=e247]: Completed
+              - cell "30秒" [ref=e248]:
+                - generic [ref=e250]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e251]
+              - cell "删除 查看" [ref=e252]:
+                - generic [ref=e253]:
+                  - button "删除" [ref=e254] [cursor=pointer]:
+                    - generic [ref=e255]: 删除
+                  - separator [ref=e256]
+                  - button "查看" [ref=e257] [cursor=pointer]:
+                    - generic [ref=e258]: 查看
+            - row "8756203a1e58468db35369a81ab144b5 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e259]:
+              - cell [ref=e260]:
+                - generic [ref=e263]:
+                  - generic [ref=e264]: 󰄱
+                  - checkbox [ref=e265] [cursor=pointer]
+              - cell "8756203a1e58468db35369a81ab144b5" [ref=e266]:
+                - generic [ref=e267]: 8756203a1e58468db35369a81ab144b5
+              - cell "Delay" [ref=e268]
+              - cell "Completed" [ref=e269]:
+                - generic [ref=e271]: Completed
+              - cell "30秒" [ref=e272]:
+                - generic [ref=e274]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e275]
+              - cell "删除 查看" [ref=e276]:
+                - generic [ref=e277]:
+                  - button "删除" [ref=e278] [cursor=pointer]:
+                    - generic [ref=e279]: 删除
+                  - separator [ref=e280]
+                  - button "查看" [ref=e281] [cursor=pointer]:
+                    - generic [ref=e282]: 查看
+            - row "314de1f0b3094f9b96b940a8da269f45 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e283]:
+              - cell [ref=e284]:
+                - generic [ref=e287]:
+                  - generic [ref=e288]: 󰄱
+                  - checkbox [ref=e289] [cursor=pointer]
+              - cell "314de1f0b3094f9b96b940a8da269f45" [ref=e290]:
+                - generic [ref=e291]: 314de1f0b3094f9b96b940a8da269f45
+              - cell "Delay" [ref=e292]
+              - cell "Completed" [ref=e293]:
+                - generic [ref=e295]: Completed
+              - cell "30秒" [ref=e296]:
+                - generic [ref=e298]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e299]
+              - cell "删除 查看" [ref=e300]:
+                - generic [ref=e301]:
+                  - button "删除" [ref=e302] [cursor=pointer]:
+                    - generic [ref=e303]: 删除
+                  - separator [ref=e304]
+                  - button "查看" [ref=e305] [cursor=pointer]:
+                    - generic [ref=e306]: 查看
+            - row "81437cdd1e374aa786d87c977c0dd1f6 Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e307]:
+              - cell [ref=e308]:
+                - generic [ref=e311]:
+                  - generic [ref=e312]: 󰄱
+                  - checkbox [ref=e313] [cursor=pointer]
+              - cell "81437cdd1e374aa786d87c977c0dd1f6" [ref=e314]:
+                - generic [ref=e315]: 81437cdd1e374aa786d87c977c0dd1f6
+              - cell "Delay" [ref=e316]
+              - cell "Completed" [ref=e317]:
+                - generic [ref=e319]: Completed
+              - cell "30秒" [ref=e320]:
+                - generic [ref=e322]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e323]
+              - cell "删除 查看" [ref=e324]:
+                - generic [ref=e325]:
+                  - button "删除" [ref=e326] [cursor=pointer]:
+                    - generic [ref=e327]: 删除
+                  - separator [ref=e328]
+                  - button "查看" [ref=e329] [cursor=pointer]:
+                    - generic [ref=e330]: 查看
+            - row "e188a800e86e4bc1b2f4649ae41b814f Delay Completed 30秒 2026/6/22 14:04:10 删除 查看" [ref=e331]:
+              - cell [ref=e332]:
+                - generic [ref=e335]:
+                  - generic [ref=e336]: 󰄱
+                  - checkbox [ref=e337] [cursor=pointer]
+              - cell "e188a800e86e4bc1b2f4649ae41b814f" [ref=e338]:
+                - generic [ref=e339]: e188a800e86e4bc1b2f4649ae41b814f
+              - cell "Delay" [ref=e340]
+              - cell "Completed" [ref=e341]:
+                - generic [ref=e343]: Completed
+              - cell "30秒" [ref=e344]:
+                - generic [ref=e346]: 30秒
+              - cell "2026/6/22 14:04:10" [ref=e347]
+              - cell "删除 查看" [ref=e348]:
+                - generic [ref=e349]:
+                  - button "删除" [ref=e350] [cursor=pointer]:
+                    - generic [ref=e351]: 删除
+                  - separator [ref=e352]
+                  - button "查看" [ref=e353] [cursor=pointer]:
+                    - generic [ref=e354]: 查看
+            - row "a33153e26fda4f8e91ae7c915c621759 Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e355]:
+              - cell [ref=e356]:
+                - generic [ref=e359]:
+                  - generic [ref=e360]: 󰄱
+                  - checkbox [ref=e361] [cursor=pointer]
+              - cell "a33153e26fda4f8e91ae7c915c621759" [ref=e362]:
+                - generic [ref=e363]: a33153e26fda4f8e91ae7c915c621759
+              - cell "Test" [ref=e364]
+              - cell "Completed" [ref=e365]:
+                - generic [ref=e367]: Completed
+              - cell "-" [ref=e368]:
+                - generic [ref=e369]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e370]
+              - cell "删除 查看" [ref=e371]:
+                - generic [ref=e372]:
+                  - button "删除" [ref=e373] [cursor=pointer]:
+                    - generic [ref=e374]: 删除
+                  - separator [ref=e375]
+                  - button "查看" [ref=e376] [cursor=pointer]:
+                    - generic [ref=e377]: 查看
+            - row "c4b7711bd37349b4805d98c1d63fa27b Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e378]:
+              - cell [ref=e379]:
+                - generic [ref=e382]:
+                  - generic [ref=e383]: 󰄱
+                  - checkbox [ref=e384] [cursor=pointer]
+              - cell "c4b7711bd37349b4805d98c1d63fa27b" [ref=e385]:
+                - generic [ref=e386]: c4b7711bd37349b4805d98c1d63fa27b
+              - cell "Test" [ref=e387]
+              - cell "Completed" [ref=e388]:
+                - generic [ref=e390]: Completed
+              - cell "-" [ref=e391]:
+                - generic [ref=e392]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e393]
+              - cell "删除 查看" [ref=e394]:
+                - generic [ref=e395]:
+                  - button "删除" [ref=e396] [cursor=pointer]:
+                    - generic [ref=e397]: 删除
+                  - separator [ref=e398]
+                  - button "查看" [ref=e399] [cursor=pointer]:
+                    - generic [ref=e400]: 查看
+            - row "f084a81838c64287971b1dfff9011db7 Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e401]:
+              - cell [ref=e402]:
+                - generic [ref=e405]:
+                  - generic [ref=e406]: 󰄱
+                  - checkbox [ref=e407] [cursor=pointer]
+              - cell "f084a81838c64287971b1dfff9011db7" [ref=e408]:
+                - generic [ref=e409]: f084a81838c64287971b1dfff9011db7
+              - cell "Test" [ref=e410]
+              - cell "Completed" [ref=e411]:
+                - generic [ref=e413]: Completed
+              - cell "-" [ref=e414]:
+                - generic [ref=e415]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e416]
+              - cell "删除 查看" [ref=e417]:
+                - generic [ref=e418]:
+                  - button "删除" [ref=e419] [cursor=pointer]:
+                    - generic [ref=e420]: 删除
+                  - separator [ref=e421]
+                  - button "查看" [ref=e422] [cursor=pointer]:
+                    - generic [ref=e423]: 查看
+            - row "c3b0c8179ff340ac904d686debc3e1ad Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e424]:
+              - cell [ref=e425]:
+                - generic [ref=e428]:
+                  - generic [ref=e429]: 󰄱
+                  - checkbox [ref=e430] [cursor=pointer]
+              - cell "c3b0c8179ff340ac904d686debc3e1ad" [ref=e431]:
+                - generic [ref=e432]: c3b0c8179ff340ac904d686debc3e1ad
+              - cell "Test" [ref=e433]
+              - cell "Completed" [ref=e434]:
+                - generic [ref=e436]: Completed
+              - cell "-" [ref=e437]:
+                - generic [ref=e438]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e439]
+              - cell "删除 查看" [ref=e440]:
+                - generic [ref=e441]:
+                  - button "删除" [ref=e442] [cursor=pointer]:
+                    - generic [ref=e443]: 删除
+                  - separator [ref=e444]
+                  - button "查看" [ref=e445] [cursor=pointer]:
+                    - generic [ref=e446]: 查看
+            - row "87aa73edcfdb4089ad55adb614f07712 Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e447]:
+              - cell [ref=e448]:
+                - generic [ref=e451]:
+                  - generic [ref=e452]: 󰄱
+                  - checkbox [ref=e453] [cursor=pointer]
+              - cell "87aa73edcfdb4089ad55adb614f07712" [ref=e454]:
+                - generic [ref=e455]: 87aa73edcfdb4089ad55adb614f07712
+              - cell "Test" [ref=e456]
+              - cell "Completed" [ref=e457]:
+                - generic [ref=e459]: Completed
+              - cell "-" [ref=e460]:
+                - generic [ref=e461]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e462]
+              - cell "删除 查看" [ref=e463]:
+                - generic [ref=e464]:
+                  - button "删除" [ref=e465] [cursor=pointer]:
+                    - generic [ref=e466]: 删除
+                  - separator [ref=e467]
+                  - button "查看" [ref=e468] [cursor=pointer]:
+                    - generic [ref=e469]: 查看
+            - row "4f868c20a53f430cb3b8942286eb8fa7 Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e470]:
+              - cell [ref=e471]:
+                - generic [ref=e474]:
+                  - generic [ref=e475]: 󰄱
+                  - checkbox [ref=e476] [cursor=pointer]
+              - cell "4f868c20a53f430cb3b8942286eb8fa7" [ref=e477]:
+                - generic [ref=e478]: 4f868c20a53f430cb3b8942286eb8fa7
+              - cell "Test" [ref=e479]
+              - cell "Completed" [ref=e480]:
+                - generic [ref=e482]: Completed
+              - cell "-" [ref=e483]:
+                - generic [ref=e484]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e485]
+              - cell "删除 查看" [ref=e486]:
+                - generic [ref=e487]:
+                  - button "删除" [ref=e488] [cursor=pointer]:
+                    - generic [ref=e489]: 删除
+                  - separator [ref=e490]
+                  - button "查看" [ref=e491] [cursor=pointer]:
+                    - generic [ref=e492]: 查看
+            - row "ab67f45b8ef945259e9dff8d3ce2f981 Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e493]:
+              - cell [ref=e494]:
+                - generic [ref=e497]:
+                  - generic [ref=e498]: 󰄱
+                  - checkbox [ref=e499] [cursor=pointer]
+              - cell "ab67f45b8ef945259e9dff8d3ce2f981" [ref=e500]:
+                - generic [ref=e501]: ab67f45b8ef945259e9dff8d3ce2f981
+              - cell "Test" [ref=e502]
+              - cell "Completed" [ref=e503]:
+                - generic [ref=e505]: Completed
+              - cell "-" [ref=e506]:
+                - generic [ref=e507]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e508]
+              - cell "删除 查看" [ref=e509]:
+                - generic [ref=e510]:
+                  - button "删除" [ref=e511] [cursor=pointer]:
+                    - generic [ref=e512]: 删除
+                  - separator [ref=e513]
+                  - button "查看" [ref=e514] [cursor=pointer]:
+                    - generic [ref=e515]: 查看
+            - row "209038fe715a43c18fe7d1347736de3d Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e516]:
+              - cell [ref=e517]:
+                - generic [ref=e520]:
+                  - generic [ref=e521]: 󰄱
+                  - checkbox [ref=e522] [cursor=pointer]
+              - cell "209038fe715a43c18fe7d1347736de3d" [ref=e523]:
+                - generic [ref=e524]: 209038fe715a43c18fe7d1347736de3d
+              - cell "Test" [ref=e525]
+              - cell "Completed" [ref=e526]:
+                - generic [ref=e528]: Completed
+              - cell "-" [ref=e529]:
+                - generic [ref=e530]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e531]
+              - cell "删除 查看" [ref=e532]:
+                - generic [ref=e533]:
+                  - button "删除" [ref=e534] [cursor=pointer]:
+                    - generic [ref=e535]: 删除
+                  - separator [ref=e536]
+                  - button "查看" [ref=e537] [cursor=pointer]:
+                    - generic [ref=e538]: 查看
+            - row "c1e6df05299845708c77b5df70cbdc7e Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e539]:
+              - cell [ref=e540]:
+                - generic [ref=e543]:
+                  - generic [ref=e544]: 󰄱
+                  - checkbox [ref=e545] [cursor=pointer]
+              - cell "c1e6df05299845708c77b5df70cbdc7e" [ref=e546]:
+                - generic [ref=e547]: c1e6df05299845708c77b5df70cbdc7e
+              - cell "Test" [ref=e548]
+              - cell "Completed" [ref=e549]:
+                - generic [ref=e551]: Completed
+              - cell "-" [ref=e552]:
+                - generic [ref=e553]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e554]
+              - cell "删除 查看" [ref=e555]:
+                - generic [ref=e556]:
+                  - button "删除" [ref=e557] [cursor=pointer]:
+                    - generic [ref=e558]: 删除
+                  - separator [ref=e559]
+                  - button "查看" [ref=e560] [cursor=pointer]:
+                    - generic [ref=e561]: 查看
+            - row "b50388be752342fd8f9d3ae03221eac9 Test Completed - 2026/6/22 13:58:05 删除 查看" [ref=e562]:
+              - cell [ref=e563]:
+                - generic [ref=e566]:
+                  - generic [ref=e567]: 󰄱
+                  - checkbox [ref=e568] [cursor=pointer]
+              - cell "b50388be752342fd8f9d3ae03221eac9" [ref=e569]:
+                - generic [ref=e570]: b50388be752342fd8f9d3ae03221eac9
+              - cell "Test" [ref=e571]
+              - cell "Completed" [ref=e572]:
+                - generic [ref=e574]: Completed
+              - cell "-" [ref=e575]:
+                - generic [ref=e576]: "-"
+              - cell "2026/6/22 13:58:05" [ref=e577]
+              - cell "删除 查看" [ref=e578]:
+                - generic [ref=e579]:
+                  - button "删除" [ref=e580] [cursor=pointer]:
+                    - generic [ref=e581]: 删除
+                  - separator [ref=e582]
+                  - button "查看" [ref=e583] [cursor=pointer]:
+                    - generic [ref=e584]: 查看
+        - generic [ref=e585]:
+          - generic [ref=e586]:
+            - generic [ref=e587]: "Items per page:"
+            - combobox [ref=e590] [cursor=pointer]:
+              - generic [ref=e592]:
+                - generic [ref=e594]: "20"
+                - textbox "Open": "20"
+              - generic [ref=e596]: 󰍝
+          - generic [ref=e597]: 1-20 of 50410
+          - navigation "Pagination Navigation" [ref=e598]:
+            - list [ref=e599]:
+              - listitem [ref=e600]:
+                - button "Previous page" [disabled]:
+                  - generic:
+                    - generic: 󰅁
+              - listitem [ref=e601]:
+                - button "Page 1, Current page" [ref=e602] [cursor=pointer]:
+                  - generic [ref=e603]: "1"
+              - listitem [ref=e604]:
+                - button "Go to page 2" [ref=e605] [cursor=pointer]:
+                  - generic [ref=e606]: "2"
+              - listitem [ref=e607]:
+                - button "Go to page 3" [ref=e608] [cursor=pointer]:
+                  - generic [ref=e609]: "3"
+              - listitem [ref=e610]:
+                - button "Go to page 4" [ref=e611] [cursor=pointer]:
+                  - generic [ref=e612]: "4"
+              - listitem [ref=e613]:
+                - button "Go to page 5" [ref=e614] [cursor=pointer]:
+                  - generic [ref=e615]: "5"
+              - listitem [ref=e616]:
+                - button "Go to page 6" [ref=e617] [cursor=pointer]:
+                  - generic [ref=e618]: "6"
+              - listitem [ref=e619]:
+                - button "..." [disabled]:
+                  - generic: ...
+              - listitem [ref=e620]:
+                - button "Go to page 2521" [ref=e621] [cursor=pointer]:
+                  - generic [ref=e622]: 2,521
+              - listitem [ref=e623]:
+                - button "Next page" [ref=e624] [cursor=pointer]:
+                  - generic [ref=e626]: 󰅂
+  - contentinfo [ref=e627]:
+    - generic [ref=e628]:
+      - generic [ref=e629]:
+        - generic [ref=e630]: 󰏖
+        - generic [ref=e631]: "Redis MQ: 1.0.5"
+      - generic [ref=e632]:
+        - generic [ref=e633]: 󰆼
+        - generic [ref=e634]: "Redis: 5.0.9"
+      - generic [ref=e635]:
+        - generic [ref=e636]: 󰒍
+        - generic [ref=e637]: "节点: 2 / 消费者: 6"
