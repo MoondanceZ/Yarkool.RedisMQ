@@ -23,12 +23,12 @@
         /// <summary>
         /// 已完成消息最大保留数量
         /// </summary>
-        public int CompletedMessageMaxLength { get; set; } = 50000;
+        public int CompletedMessageMaxLength { get; set; } = int.MaxValue;
 
         /// <summary>
         /// 失败消息最大保留数量
         /// </summary>
-        public int FailedMessageMaxLength { get; set; } = 20000;
+        public int FailedMessageMaxLength { get; set; } = int.MaxValue;
 
         /// <summary>
         /// Pending孤儿消息清理超时时间

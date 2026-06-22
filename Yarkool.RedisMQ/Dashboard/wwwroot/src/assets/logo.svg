@@ -1,6 +1,43 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M261.126 140.65L164.624 307.732L256.001 466L377.028 256.5L498.001 47H315.192L261.126 140.65Z" fill="#1697F6"/>
-<path d="M135.027 256.5L141.365 267.518L231.64 111.178L268.731 47H256H14L135.027 256.5Z" fill="#AEDDFF"/>
-<path d="M315.191 47C360.935 197.446 256 466 256 466L164.624 307.732L315.191 47Z" fill="#1867C0"/>
-<path d="M268.731 47C76.0026 47 141.366 267.518 141.366 267.518L268.731 47Z" fill="#7BC6FF"/>
+  <defs>
+    <linearGradient id="shell" x1="96" y1="74" x2="424" y2="438" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172033"/>
+      <stop offset="1" stop-color="#070B12"/>
+    </linearGradient>
+    <linearGradient id="stream" x1="140" y1="317" x2="373" y2="191" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB547"/>
+      <stop offset=".46" stop-color="#FF4F64"/>
+      <stop offset="1" stop-color="#CF232E"/>
+    </linearGradient>
+    <linearGradient id="cubeTop" x1="158" y1="130" x2="352" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF6D75"/>
+      <stop offset="1" stop-color="#C81728"/>
+    </linearGradient>
+    <linearGradient id="cubeFace" x1="147" y1="191" x2="363" y2="383" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C92033"/>
+      <stop offset="1" stop-color="#7F111C"/>
+    </linearGradient>
+    <filter id="softShadow" x="76" y="74" width="360" height="376" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity=".28"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="116" fill="url(#shell)"/>
+  <path d="M121 166C121 132.311 148.311 105 182 105H390C401.598 105 411 114.402 411 126V330C411 363.689 383.689 391 350 391H142C130.402 391 121 381.598 121 370V166Z" fill="#0E1524" opacity=".72"/>
+
+  <g filter="url(#softShadow)">
+    <path d="M255.7 111L380 180.3L255.7 249.6L131.5 180.3L255.7 111Z" fill="url(#cubeTop)"/>
+    <path d="M131.5 180.3L255.7 249.6V331.1L131.5 261.8V180.3Z" fill="#B5192A"/>
+    <path d="M380 180.3L255.7 249.6V331.1L380 261.8V180.3Z" fill="url(#cubeFace)"/>
+
+    <path d="M166 281.2L255.7 331.3L345.5 281.2L380 300.4L255.7 369.7L131.5 300.4L166 281.2Z" fill="#EA3949"/>
+    <path d="M166 331.5L255.7 381.6L345.5 331.5L380 350.7L255.7 420L131.5 350.7L166 331.5Z" fill="#FF5966"/>
+  </g>
+
+  <path d="M160 315C191.6 267.6 231.2 236.2 278.9 220.8C309.5 210.9 341 209.1 374 215.4" stroke="url(#stream)" stroke-width="28" stroke-linecap="round"/>
+  <path d="M343 187L394 220L336 241" stroke="#FFB547" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="157" cy="316" r="20" fill="#FFE0A6"/>
+  <circle cx="257" cy="244" r="18" fill="#FFD08B"/>
+  <circle cx="371" cy="217" r="20" fill="#FF8A54"/>
 </svg>

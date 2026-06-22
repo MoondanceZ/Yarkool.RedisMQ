@@ -2,7 +2,10 @@
   <v-app>
     <v-app-bar class="app-bar" :elevation="2">
       <v-container class="app-bar-container d-flex align-center justify-center">
-        <v-app-bar-title>Redis MQ Web</v-app-bar-title>
+        <div class="brand-mark">
+          <img :src="logoUrl" alt="" class="brand-logo">
+          <v-app-bar-title>Redis MQ Web</v-app-bar-title>
+        </div>
 
         <v-spacer />
 
@@ -67,6 +70,7 @@
   import { useTheme } from 'vuetify'
   import { useAppStore } from '@/stores/app'
   import { computed, onMounted, onUnmounted } from 'vue'
+  import logoUrl from '@/assets/logo.svg'
 
   const theme = useTheme()
   const store = useAppStore()
@@ -124,6 +128,26 @@
   max-width: 100%;
 }
 
+.brand-mark {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 9px;
+  box-shadow: 0 6px 16px rgba(185, 25, 42, 0.28);
+}
+
+.brand-mark :deep(.v-toolbar-title) {
+  margin-inline-start: 0;
+}
+
 .nav-actions {
   gap: 4px;
 }
@@ -158,7 +182,14 @@
     padding-inline: 8px;
   }
 
-  .app-bar :deep(.v-toolbar-title) {
+  .brand-logo {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 8px;
+  }
+
+  .brand-mark :deep(.v-toolbar-title) {
     flex: 0 0 auto;
     font-size: 16px;
     margin-inline-start: 0;
