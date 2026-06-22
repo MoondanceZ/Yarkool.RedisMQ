@@ -78,6 +78,7 @@ public class ConsumerBackgroundService
                                             var consumer = (IRedisMQConsumerExecutor)scope.ServiceProvider.GetRequiredService(consumerType);
                                             message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
                                             messageHandler.MessageId = message.MessageId;
+                                            messageHandler.StreamMessageId = data.id;
 
                                             // _logger?.LogInformation($"{consumerName}_{consumerIndex} subscribing {message.MessageContent}");
                                             messageContent = string.IsNullOrEmpty(message.MessageContent) ? null : queueConfig.Serializer.Deserialize(message.MessageContent, messageType);
@@ -86,7 +87,8 @@ public class ConsumerBackgroundService
                                             pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
                                             pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
                                             pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), message.MessageId);
-                                            pipe.HSet($"{cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Processing.ToString());
+                                            pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), message.MessageId);
+                                            pipe.HSet($"{cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Processing);
                                             pipe.HIncrBy($"{cacheKeyManager.PublishMessageList}:{message.MessageId}", "ExecutionTimes", 1);
                                             pipe.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
                                             pipe.EndPipe();
@@ -158,6 +160,7 @@ public class ConsumerBackgroundService
                                                 {
                                                     pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
                                                     pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), message.MessageId);
+                                                    pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), message.MessageId);
                                                     
                                                     //超出重试次数, 从原来的队列中删除, 并加入到异常列表
                                                     var messageErrorInfo = default(MessageErrorInfo);
@@ -188,11 +191,14 @@ public class ConsumerBackgroundService
                                                         pipe.XDel(queueNameKey, data.id);
                                                         pipe.HSet($"{cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Failed, "ErrorInfo", queueConfig.Serializer.Serialize(messageErrorInfo));
                                                         pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
+                                                        pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), message.MessageId);
                                                         pipe.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
                                                     }
                                                     else
                                                     {
                                                         pipe.HSet($"{cacheKeyManager.PublishMessageList}:{message.MessageId}", "Status", MessageStatus.Retrying, "ErrorInfo", queueConfig.Serializer.Serialize(messageErrorInfo));
+                                                        pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), message.MessageId);
+                                                        pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), message.MessageId);
                                                         pipe.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
                                                     }
 

@@ -34,8 +34,8 @@
       </v-container>
     </v-app-bar>
 
-    <v-main>
-      <div class="main-content py-4">
+    <v-main class="app-main">
+      <div class="main-content">
         <router-view />
       </div>
     </v-main>
@@ -137,6 +137,27 @@
   min-width: 48px;
 }
 
+.app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0 !important;
+}
+
+.app-main :deep(.v-main__wrap) {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.main-content {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+}
+
 @media (max-width: 600px) {
   .app-bar-container {
     padding-inline: 8px;
@@ -161,7 +182,7 @@
   }
 
   .main-content {
-    padding-block: 8px !important;
+    padding: 8px;
   }
 
   .footer-content {

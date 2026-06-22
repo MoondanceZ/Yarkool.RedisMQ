@@ -319,6 +319,7 @@
 <style scoped>
 .home-page {
   max-width: 100%;
+  padding: 0;
 }
 
 .chart-panel {
@@ -349,10 +350,6 @@
 }
 
 @media (max-width: 600px) {
-  .home-page {
-    padding-inline: 8px;
-  }
-
   .chart-panel {
     height: 220px;
   }

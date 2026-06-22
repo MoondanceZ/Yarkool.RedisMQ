@@ -94,6 +94,7 @@
 <style scoped>
 .server-page {
   max-width: 100%;
+  padding: 0;
 }
 
 .table-wrap {
@@ -115,10 +116,6 @@
 }
 
 @media (max-width: 600px) {
-  .server-page {
-    padding-inline: 8px;
-  }
-
   .server-page :deep(.v-card-text) {
     padding-inline: 8px;
   }

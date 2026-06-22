@@ -98,6 +98,7 @@ namespace Yarkool.RedisMQ
                                                         pipeError.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), message.MessageId);
                                                         pipeError.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), message.MessageId);
                                                         pipeError.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
+                                                        pipeError.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), message.MessageId);
                                                         pipeError.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), TimeHelper.GetMillisecondTimestamp(), message.MessageId);
                                                         pipeError.EndPipe();
                                                         continue;
@@ -116,6 +117,7 @@ namespace Yarkool.RedisMQ
                                                 pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), message.MessageId);
                                                 pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), message.MessageId);
                                                 pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), message.MessageId);
+                                                pipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), message.MessageId);
                                                 pipe.EndPipe();
 
                                                 logger?.LogInformation("Queue {queueName} republish pending timeout message {content}", queueName, message.MessageContent);

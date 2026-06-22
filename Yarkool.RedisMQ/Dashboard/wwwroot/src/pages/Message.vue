@@ -1,8 +1,8 @@
 <template>
   <v-container fluid class="message-page">
-    <v-row>
-      <v-col cols="12" md="2">
-        <v-card class="status-card">
+    <div class="message-layout">
+      <section class="status-pane">
+        <v-card class="status-card" elevation="2">
           <v-card-title>消息状态</v-card-title>
           <v-list class="status-list">
             <v-list-item
@@ -20,9 +20,9 @@
             </v-list-item>
           </v-list>
         </v-card>
-      </v-col>
-      <v-col cols="12" md="10">
-        <v-card>
+      </section>
+      <section class="message-list-pane">
+        <v-card class="message-list-card" elevation="2">
           <v-card-title class="message-card-title d-flex align-center">
             <span>消息列表</span>
             <v-spacer />
@@ -41,6 +41,7 @@
               :items-length="totalCount"
               :items-per-page="pageSize"
               :page="pageIndex"
+              fixed-header
               hide-default-footer
               :show-select="!smAndDown"
             >
@@ -56,12 +57,10 @@
                 </v-chip>
               </template>
               <template #item.delay="{ item }">
-                <span v-if="item.message.delayTime > 0">
-                  延迟
-                  <span class="text-info mx-1">{{ item.message.delayTime }}</span>
-                  秒
+                <span v-if="item.message.delayTime > 0" class="delay-cell">
+                  <span class="delay-time text-info">{{ formatDelayTime(item.message.delayTime) }}</span>
                 </span>
-                <span v-else>-</span>
+                <span v-else class="delay-cell">-</span>
               </template>
               <template #item.createTime="{ item }">
                 {{ new Date(item.message.createTimestamp).toLocaleString() }}
@@ -112,8 +111,8 @@
             />
           </div>
         </v-card>
-      </v-col>
-    </v-row>
+      </section>
+    </div>
 
     <!-- 消息详情对话框 -->
     <v-dialog v-model="dialogVisible" max-width="800">
@@ -228,7 +227,7 @@
     { title: '消息ID', key: 'messageId', minWidth: '240px' },
     { title: '队列', key: 'queueName', minWidth: '100px' },
     { title: '状态', key: 'status', align: 'center', width: '120px' },
-    { title: '延迟', key: 'delay', align: 'center', width: '100px' },
+    { title: '延迟', key: 'delay', align: 'center', width: '150px', minWidth: '150px' },
     { title: '创建时间', key: 'createTime', width: '170px', align: 'center' },
     { title: '操作', key: 'actions', sortable: false, width: '120px', align: 'center' },
   ];
@@ -236,7 +235,7 @@
     { title: '消息ID', key: 'messageId', minWidth: '240px' },
     { title: '队列', key: 'queueName', minWidth: '90px' },
     { title: '状态', key: 'status', align: 'center', width: '100px' },
-    { title: '延迟', key: 'delay', align: 'center', width: '90px' },
+    { title: '延迟', key: 'delay', align: 'center', width: '150px', minWidth: '150px' },
     { title: '创建时间', key: 'createTime', width: '160px', align: 'center' },
     { title: '操作', key: 'actions', sortable: false, width: '110px', align: 'center' },
   ];
@@ -245,7 +244,7 @@
 
   // 分页参数
   const pageIndex = ref(1);
-  const pageSize = ref(10);
+  const pageSize = ref(20);
   const pageSizeOptions = [10, 20, 50, 100];
   const selectedStatus = ref<MessageStatus | null>(null);
   const totalCount = computed(() => getStatusCount(selectedStatus.value));
@@ -374,6 +373,32 @@
     }
   };
 
+  const formatDelayTime = (delayTime: number): string => {
+    const totalSeconds = Math.floor(delayTime);
+    if (totalSeconds <= 0) return '-';
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return [
+        `${hours}小时`,
+        minutes > 0 ? `${minutes}分` : '',
+        seconds > 0 ? `${seconds}秒` : '',
+      ].filter(Boolean).join('');
+    }
+
+    if (minutes > 0) {
+      return [
+        `${minutes}分`,
+        seconds > 0 ? `${seconds}秒` : '',
+      ].filter(Boolean).join('');
+    }
+
+    return `${seconds}秒`;
+  };
+
   // 删除单条消息
   const handleDeleteOne = async (item: MessageResponse) => {
     try {
@@ -435,7 +460,38 @@
 
 <style scoped>
 .message-page {
+  height: 100%;
   max-width: 100%;
+  overflow: visible;
+  padding: 0;
+}
+
+.message-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+
+.status-pane,
+.message-list-pane {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+}
+
+.status-card,
+.message-list-card {
+  height: 100%;
+  width: 100%;
+}
+
+.message-list-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .message-dialog {
@@ -470,17 +526,24 @@
 }
 
 .message-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   overflow-x: hidden;
 }
 
 .message-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
   width: 100%;
   min-width: 0;
 }
 
 .message-table :deep(.v-table__wrapper) {
-  overflow-x: auto;
+  flex: 1 1 auto;
+  overflow: auto;
 }
 
 .message-table :deep(.v-table__wrapper > table) {
@@ -503,7 +566,19 @@
   min-width: 112px;
 }
 
+.delay-cell,
+.delay-time {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.delay-cell {
+  width: 100%;
+  text-align: center;
+}
+
 .message-pagination {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -624,6 +699,29 @@
 }
 
 @media (max-width: 960px) {
+  .message-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .message-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: auto;
+  }
+
+  .status-pane,
+  .message-list-pane,
+  .status-card,
+  .message-list-card {
+    height: auto;
+  }
+
+  .message-table :deep(.v-table__wrapper) {
+    max-height: 58vh;
+  }
+
   .status-card :deep(.v-card-title) {
     padding-bottom: 8px;
   }
@@ -646,10 +744,6 @@
 }
 
 @media (max-width: 600px) {
-  .message-page {
-    padding-inline: 8px;
-  }
-
   .status-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -690,7 +784,7 @@
   }
 
   .message-table :deep(.v-table__wrapper > table) {
-    min-width: 790px;
+    min-width: 850px;
   }
 
   .message-table :deep(th),

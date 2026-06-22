@@ -167,6 +167,7 @@
 <style scoped>
 .queue-page {
   max-width: 100%;
+  padding: 0;
 }
 
 .table-wrap {
@@ -197,10 +198,6 @@
 }
 
 @media (max-width: 600px) {
-  .queue-page {
-    padding-inline: 8px;
-  }
-
   .queue-page :deep(.v-card-text) {
     padding-inline: 8px;
   }

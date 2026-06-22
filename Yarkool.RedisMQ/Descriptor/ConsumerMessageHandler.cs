@@ -16,6 +16,11 @@ public class ConsumerMessageHandler
     internal string? MessageId { get; set; }
 
     /// <summary>
+    /// Redis Stream message id
+    /// </summary>
+    internal string? StreamMessageId { get; set; }
+
+    /// <summary>
     /// 是否已确认当前消息
     /// </summary>
     internal bool IsAcknowledged { get; private set; }
@@ -38,14 +43,21 @@ public class ConsumerMessageHandler
     /// <returns></returns>
     public async Task AckAsync(IEnumerable<string> messageIds, CancellationToken cancellationToken = default)
     {
-        if (!messageIds.Any())
+        var messageIdList = messageIds
+            .Where(x => !string.IsNullOrEmpty(x))
+            .Distinct()
+            .ToArray();
+
+        if (messageIdList.Length == 0)
             return;
+
         var streamMessageIdDic = new Dictionary<string, string>();
-        foreach (var id in messageIds)
+        foreach (var id in messageIdList)
         {
-            if (string.IsNullOrEmpty(id))
-                continue;
-            var streamMessageId = await redisClient.HGetAsync($"{cacheKeyManager.PublishMessageList}:{id}", "Id").ConfigureAwait(false);
+            var streamMessageId = id == MessageId && !string.IsNullOrEmpty(StreamMessageId)
+                ? StreamMessageId
+                : await redisClient.HGetAsync($"{cacheKeyManager.PublishMessageList}:{id}", "Id").ConfigureAwait(false);
+
             if (!string.IsNullOrEmpty(streamMessageId))
                 streamMessageIdDic[id] = streamMessageId;
         }

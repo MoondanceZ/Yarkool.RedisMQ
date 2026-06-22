@@ -10,13 +10,15 @@
 // );
 
 html {
-    overflow-y: auto;
+    overflow-y: hidden;
     overflow-x: hidden;
 }
 
 body,
 #app {
+    height: 100vh;
     overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 // 全局滚动条样式
