@@ -4,6 +4,10 @@ import Message from '../pages/Message.vue';
 import Queue from '../pages/Queue.vue';
 import Server from '../pages/Server.vue';
 
+if (!window.location.hash) {
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/`);
+}
+
 const routes = [
   {
     path: '/',
@@ -24,6 +28,10 @@ const routes = [
     path: '/server',
     name: 'Server',
     component: Server,
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
   },
 ];
 

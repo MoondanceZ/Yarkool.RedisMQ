@@ -7,13 +7,13 @@
           <v-list>
             <v-list-item
               v-for="status in statusList"
-              :key="status.value || 'All'"
+              :key="status.value ?? 'All'"
               :active="selectedStatus === status.value"
               @click="handleStatusChange(status.value)"
             >
-              <v-list-item-title>
-                {{ status.label }}
-                <v-chip class="ml-2" color="primary" size="small">
+              <v-list-item-title class="status-list-item">
+                <span class="status-label">{{ status.label }}</span>
+                <v-chip class="status-count" color="primary" size="small">
                   {{ getStatusCount(status.value) }}
                 </v-chip>
               </v-list-item-title>
@@ -39,8 +39,8 @@
             :items-length="totalCount"
             :items-per-page="pageSize"
             :page="pageIndex"
+            hide-default-footer
             show-select
-            @update:options="handlePageChange"
           >
             <template #item.messageId="{ item }">
               {{ item.message.messageId }}
@@ -86,6 +86,28 @@
               </div>
             </template>
           </v-data-table-server>
+          <div class="message-pagination">
+            <div class="page-size-control">
+              <span class="page-size-label">Items per page:</span>
+              <v-select
+                v-model="pageSize"
+                :items="pageSizeOptions"
+                class="page-size-select"
+                density="compact"
+                hide-details
+                variant="outlined"
+                @update:model-value="handlePageSizeChange"
+              />
+            </div>
+            <div class="page-range-text">{{ pageRangeText }}</div>
+            <v-pagination
+              v-model="pageIndex"
+              :length="pageCount"
+              :total-visible="7"
+              density="comfortable"
+              @update:model-value="handlePageIndexChange"
+            />
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -185,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { messageApi } from '@/apis';
   import type MessageResponse from '@/apis/response/MessageResponse';
@@ -210,8 +232,17 @@
   // 分页参数
   const pageIndex = ref(1);
   const pageSize = ref(10);
+  const pageSizeOptions = [10, 20, 50, 100];
   const selectedStatus = ref<MessageStatus | null>(null);
   const totalCount = computed(() => getStatusCount(selectedStatus.value));
+  const pageCount = computed(() => Math.max(Math.ceil(totalCount.value / pageSize.value), 1));
+  const pageRangeText = computed(() => {
+    if (totalCount.value === 0) return '0-0 of 0';
+
+    const start = (pageIndex.value - 1) * pageSize.value + 1;
+    const end = Math.min(pageIndex.value * pageSize.value, totalCount.value);
+    return `${start}-${end} of ${totalCount.value}`;
+  });
 
   // 状态列表
   const statusList = computed(() => [
@@ -261,9 +292,12 @@
     }
   };
 
-  const handlePageChange = (options: { page: number; itemsPerPage: number }) => {
-    pageIndex.value = options.page;
-    pageSize.value = options.itemsPerPage;
+  const handlePageIndexChange = () => {
+    fetchMessages();
+  };
+
+  const handlePageSizeChange = () => {
+    pageIndex.value = 1;
     fetchMessages();
   };
 
@@ -356,8 +390,21 @@
     if (selectedStatus.value !== newStatus) {
       selectedStatus.value = newStatus
       pageIndex.value = 1 // 重置页码
+      selected.value = []
       fetchMessages()
     }
+  })
+
+  watch(pageCount, count => {
+    if (pageIndex.value > count) {
+      pageIndex.value = count
+      fetchMessages()
+    }
+  })
+
+  onMounted(() => {
+    selectedStatus.value = routeStatus.value
+    fetchMessages()
   })
 
   // 修改状态切换处理函数
@@ -377,6 +424,53 @@
   height: 80vh;
   display: flex;
   flex-direction: column;
+}
+
+.status-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.status-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-count {
+  flex: 0 0 auto;
+  min-width: 36px;
+  justify-content: center;
+}
+
+.message-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.page-size-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-size-label,
+.page-range-text {
+  color: rgba(var(--v-theme-on-surface), 0.72);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.page-size-select {
+  width: 92px;
 }
 
 .dialog-title {
