@@ -27,7 +27,7 @@ namespace Yarkool.RedisMQ
                 services.AddLogging();
 
             services.AddRedisMQConsumer();
-            services.AddSingleton<IRedisMQPublisher, RedisMQPublisher>();
+            services.AddSingleton<IRedisMQPublisher, RedisMqPublisher>();
             services.AddSingleton<ConsumerServiceSelector>();
 
             services.AddTransient<IStartupFilter, RedisMQStartupFilter>();

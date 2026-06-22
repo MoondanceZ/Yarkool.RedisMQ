@@ -6,7 +6,7 @@ namespace Yarkool.RedisMQ.Test;
 
 public class Tests
 {
-    private IServiceProvider _serviceProvider;
+    private ServiceProvider _serviceProvider = default!;
 
     [SetUp]
     public void Setup()
@@ -23,10 +23,16 @@ public class Tests
         _serviceProvider = services.BuildServiceProvider();
     }
 
+    [TearDown]
+    public void TearDown()
+    {
+        _serviceProvider.Dispose();
+    }
+
     [Test]
     public async Task Test1()
     {
-        var publisher = _serviceProvider.GetService<IRedisMQPublisher>();
+        var publisher = _serviceProvider.GetRequiredService<IRedisMQPublisher>();
         for (int i = 0; i < 10000; i++)
         {
             await publisher.PublishMessageAsync("Test", new TestMessage { Input = i.ToString() });

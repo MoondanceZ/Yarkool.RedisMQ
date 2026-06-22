@@ -2,7 +2,7 @@
 
 namespace Yarkool.RedisMQ
 {
-    public class RedisMQPublisher
+    public class RedisMqPublisher
     (
         QueueConfig queueConfig,
         CacheKeyManager cacheKeyManager,
@@ -97,7 +97,7 @@ namespace Yarkool.RedisMQ
                 {
                     if (!_delaySecondsList.Contains(delaySeconds))
                     {
-                        redisClient.SAddAsync(delayTimeSortedSetName, delaySeconds);
+                        redisClient.SAdd(delayTimeSortedSetName, delaySeconds);
                         _delaySecondsList.Add(delaySeconds);
                     }
                 }

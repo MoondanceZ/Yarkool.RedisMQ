@@ -16,6 +16,11 @@ public class ConsumerMessageHandler
     internal string? MessageId { get; set; }
 
     /// <summary>
+    /// 是否已确认当前消息
+    /// </summary>
+    internal bool IsAcknowledged { get; private set; }
+
+    /// <summary>
     /// Ack
     /// </summary>
     /// <returns></returns>
@@ -42,7 +47,7 @@ public class ConsumerMessageHandler
                 continue;
             var streamMessageId = await redisClient.HGetAsync($"{cacheKeyManager.PublishMessageList}:{id}", "Id").ConfigureAwait(false);
             if (!string.IsNullOrEmpty(streamMessageId))
-                streamMessageIdDic.Add(id, streamMessageId);
+                streamMessageIdDic[id] = streamMessageId;
         }
 
         if (streamMessageIdDic.Any())
@@ -59,6 +64,9 @@ public class ConsumerMessageHandler
             }
 
             tran.Exec();
+
+            if (!string.IsNullOrEmpty(MessageId) && streamMessageIdDic.ContainsKey(MessageId))
+                IsAcknowledged = true;
         }
     }
 }
