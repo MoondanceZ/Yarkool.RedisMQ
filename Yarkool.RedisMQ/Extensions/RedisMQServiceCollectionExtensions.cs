@@ -35,6 +35,7 @@ namespace Yarkool.RedisMQ
             if (queueConfig.RegisterConsumerService)
             {
                 services.AddHostedService<ConsumerBackgroundService>();
+                services.AddHostedService<MessageCleanupBackgroundService>();
                 if (queueConfig.RepublishNonAckTimeOutMessage)
                     services.AddHostedService<HandlePendingTimeOutService>();
             }

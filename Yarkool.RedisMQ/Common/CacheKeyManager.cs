@@ -28,6 +28,8 @@ public class CacheKeyManager(QueueConfig queueConfig)
 
     public string ReadPendingLock => ParseCacheKey(nameof(ReadPendingLock));
 
+    public string MessageCleanupLock => ParseCacheKey(nameof(MessageCleanupLock));
+
     public string ParseCacheKey(string key)
     {
         if (string.IsNullOrWhiteSpace(queueConfig.RedisPrefix))

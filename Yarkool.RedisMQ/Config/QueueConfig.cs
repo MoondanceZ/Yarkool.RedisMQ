@@ -21,14 +21,19 @@
         public string? RedisPrefix { get; set; }
 
         /// <summary>
-        /// 发布列表大小
+        /// 已完成消息最大保留数量
         /// </summary>
-        public int PublishListSize { get; set; } = 5000;
+        public int CompletedMessageMaxLength { get; set; } = 50000;
 
         /// <summary>
-        /// 错误列表大小
+        /// 失败消息最大保留数量
         /// </summary>
-        public int ErrorListSize { get; set; } = 20000;
+        public int FailedMessageMaxLength { get; set; } = 20000;
+
+        /// <summary>
+        /// Pending孤儿消息清理超时时间
+        /// </summary>
+        public TimeSpan PendingMessageOrphanTimeout { get; set; } = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// 序列化器

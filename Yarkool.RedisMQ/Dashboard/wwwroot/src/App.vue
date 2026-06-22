@@ -53,8 +53,10 @@
         </div>
 
         <div class="d-flex align-center">
-          <v-icon class="me-2" color="success" size="small">mdi-clock-outline</v-icon>
-          <span class="text-success">{{ formatTimestamp(stats.serverInfo?.serverTimestamp) }}</span>
+          <v-icon class="me-2" color="success" size="small">mdi-server-network</v-icon>
+          <span class="text-success">
+            节点: {{ stats.serverInfo?.serverCount ?? 0 }} / 消费者: {{ stats.serverInfo?.consumerCount ?? 0 }}
+          </span>
         </div>
       </v-container>
     </v-footer>
@@ -107,13 +109,6 @@
       statsTimer = null
     }
   })
-
-  // 格式化时间戳
-  const formatTimestamp = (timestamp: number) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    return date.toLocaleString();
-  }
 </script>
 
 <style scoped>

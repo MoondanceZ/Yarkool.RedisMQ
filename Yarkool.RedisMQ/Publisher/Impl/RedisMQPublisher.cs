@@ -21,6 +21,8 @@ namespace Yarkool.RedisMQ
         public async Task<string> PublishMessageAsync(string queueName, object? message)
         {
             var time = DateTime.Now.ToString("yyyyMMddHH");
+            var metadataCreated = false;
+            var baseMessage = default(BaseMessage);
             try
             {
                 if (string.IsNullOrEmpty(queueName))
@@ -29,18 +31,14 @@ namespace Yarkool.RedisMQ
                     throw new RedisMQException("message cannot be null!");
 
                 var queueNameKey = cacheKeyManager.GetQueueName(queueName);
-                var baseMessage = new BaseMessage
+                baseMessage = new BaseMessage
                 {
                     QueueName = queueName,
                     MessageContent = queueConfig.Serializer.Serialize(message)
                 };
                 var data = queueConfig.Serializer.Deserialize<Dictionary<string, object>>(queueConfig.Serializer.Serialize(baseMessage));
-                var messageId = await redisClient.XAddAsync(queueNameKey, data).ConfigureAwait(false);
 
                 var tran = redisClient.Multi();
-                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
-                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
-                tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.SAdd(cacheKeyManager.CommonQueueList, queueName);
                 tran.ZAdd(cacheKeyManager.PublishMessageIdSet, baseMessage.CreateTimestamp, baseMessage.MessageId);
                 tran.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), baseMessage.CreateTimestamp, baseMessage.MessageId);
@@ -50,14 +48,33 @@ namespace Yarkool.RedisMQ
                     ["Status"] = MessageStatus.Pending.ToString(),
                     ["Message"] = queueConfig.Serializer.Serialize(baseMessage),
                     ["ExecutionTimes"] = 0,
-                    ["Id"] = messageId
+                    ["Id"] = string.Empty
                 });
+                tran.Exec();
+                metadataCreated = true;
+
+                var messageId = await redisClient.XAddAsync(queueNameKey, data).ConfigureAwait(false);
+
+                tran = redisClient.Multi();
+                tran.HSet($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}", "Id", messageId);
+                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:Total", 1);
+                tran.IncrBy($"{cacheKeyManager.PublishSucceeded}:{time}", 1);
+                tran.Expire($"{cacheKeyManager.PublishSucceeded}:{time}", TimeSpan.FromHours(30));
                 tran.Exec();
 
                 return baseMessage.MessageId;
             }
             catch
             {
+                if (metadataCreated && baseMessage != null)
+                {
+                    var cleanupPipe = redisClient.StartPipe();
+                    cleanupPipe.ZRem(cacheKeyManager.PublishMessageIdSet, baseMessage.MessageId);
+                    cleanupPipe.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), baseMessage.MessageId);
+                    cleanupPipe.Del($"{cacheKeyManager.PublishMessageList}:{baseMessage.MessageId}");
+                    cleanupPipe.EndPipe();
+                }
+
                 var pipe = redisClient.StartPipe();
                 pipe.IncrBy($"{cacheKeyManager.PublishFailed}:Total", 1);
                 pipe.IncrBy($"{cacheKeyManager.PublishFailed}:{time}", 1);
