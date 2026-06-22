@@ -50,13 +50,24 @@ namespace Yarkool.RedisMQ
                             try
                             {
                                 var hasClaimedMessage = false;
-                                var nextStartId = "0-0";
                                 var timeoutConsumerName = $"{_serverName}:Timeout:{queueName}";
+                                var pendingStartId = "-";
                                 do
                                 {
-                                    var timeOutPendingResult = await redisClient.XAutoClaimAsync(queueNameKey, groupName, timeoutConsumerName, pendingTimeOut, nextStartId, 50).ConfigureAwait(false);
-                                    var entries = timeOutPendingResult.entries;
-                                    nextStartId = timeOutPendingResult.start ?? "0-0";
+                                    var pendingResults = await redisClient.XPendingAsync(queueNameKey, groupName, pendingStartId, "+", 100, null!).ConfigureAwait(false);
+                                    if (pendingResults is not { Length: > 0 })
+                                        break;
+
+                                    pendingStartId = GetNextStreamId(pendingResults[^1].id);
+                                    var timeoutMessageIds = pendingResults
+                                        .Where(x => !string.IsNullOrEmpty(x.id) && x.id != "0-0" && x.id != "-" && x.id != "+" && x.id != "$" && x.id != ">")
+                                        .Where(x => x.idle >= pendingTimeOut)
+                                        .Select(x => x.id)
+                                        .ToArray();
+                                    if (timeoutMessageIds.Length == 0)
+                                        continue;
+
+                                    var entries = await redisClient.XClaimAsync(queueNameKey, groupName, timeoutConsumerName, pendingTimeOut, timeoutMessageIds).ConfigureAwait(false);
                                     if (entries is { Length: > 0 })
                                     {
                                         hasClaimedMessage = true;
@@ -123,10 +134,7 @@ namespace Yarkool.RedisMQ
                                             }
                                         }
                                     }
-
-                                    if (nextStartId == "0-0")
-                                        break;
-                                } while (!stoppingToken.IsCancellationRequested);
+                                } while (!stoppingToken.IsCancellationRequested && pendingStartId != "0-0");
 
                                 if (!hasClaimedMessage)
                                 {
@@ -151,6 +159,18 @@ namespace Yarkool.RedisMQ
             }
 
             return Task.WhenAll(tasks);
+        }
+
+        private static string GetNextStreamId(string? streamId)
+        {
+            if (string.IsNullOrEmpty(streamId))
+                return "0-0";
+
+            var parts = streamId.Split('-');
+            if (parts.Length != 2 || !long.TryParse(parts[1], out var sequence))
+                return streamId;
+
+            return $"{parts[0]}-{sequence + 1}";
         }
     }
 }

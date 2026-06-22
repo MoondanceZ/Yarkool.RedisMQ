@@ -53,6 +53,7 @@ public class ConsumerMessageHandler
         if (streamMessageIdDic.Any())
         {
             var time = DateTime.Now.ToString("yyyyMMddHH");
+            var now = TimeHelper.GetMillisecondTimestamp();
             using var tran = redisClient.Multi();
             foreach (var item in streamMessageIdDic)
             {
@@ -61,6 +62,12 @@ public class ConsumerMessageHandler
                 tran.IncrBy($"{cacheKeyManager.AckCount}:Total", 1);
                 tran.IncrBy($"{cacheKeyManager.AckCount}:{time}", 1);
                 tran.Expire($"{cacheKeyManager.AckCount}:{time}", TimeSpan.FromHours(30));
+                tran.HSet($"{cacheKeyManager.PublishMessageList}:{item.Key}", "Status", MessageStatus.Completed);
+                tran.ZAdd(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Completed), now, item.Key);
+                tran.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Pending), item.Key);
+                tran.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Processing), item.Key);
+                tran.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Retrying), item.Key);
+                tran.ZRem(cacheKeyManager.GetStatusMessageIdSet(MessageStatus.Failed), item.Key);
             }
 
             tran.Exec();

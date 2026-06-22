@@ -94,8 +94,7 @@ public class ConsumerBackgroundService
                                             //Execute message
                                             await consumer.ExecuteAsync(messageContent, messageHandler, stoppingToken).ConfigureAwait(false);
 
-                                            var isAcknowledged = isAutoAck || messageHandler.IsAcknowledged;
-                                            if (isAcknowledged)
+                                            if (isAutoAck)
                                             {
                                                 using var tran = redisClient.Multi();
                                                 tran.IncrBy($"{cacheKeyManager.ConsumeSucceeded}:Total", 1);
@@ -117,6 +116,14 @@ public class ConsumerBackgroundService
                                                     tran.Expire($"{cacheKeyManager.AckCount}:{time}", TimeSpan.FromHours(30));
                                                 }
 
+                                                tran.Exec();
+                                            }
+                                            else if (messageHandler.IsAcknowledged)
+                                            {
+                                                using var tran = redisClient.Multi();
+                                                tran.IncrBy($"{cacheKeyManager.ConsumeSucceeded}:Total", 1);
+                                                tran.IncrBy($"{cacheKeyManager.ConsumeSucceeded}:{time}", 1);
+                                                tran.Expire($"{cacheKeyManager.ConsumeSucceeded}:{time}", TimeSpan.FromHours(30));
                                                 tran.Exec();
                                             }
                                             else
