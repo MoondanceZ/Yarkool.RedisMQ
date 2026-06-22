@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="server-page">
+  <v-container class="server-page" fluid>
     <v-row>
       <v-col cols="12">
         <v-card>

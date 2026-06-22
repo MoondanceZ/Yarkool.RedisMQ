@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="queue-page">
+  <v-container class="queue-page" fluid>
     <v-row>
       <v-col cols="12">
         <v-card>

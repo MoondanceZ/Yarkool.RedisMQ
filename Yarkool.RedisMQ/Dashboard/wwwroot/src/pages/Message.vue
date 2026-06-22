@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="message-page">
+  <v-container class="message-page" fluid>
     <div class="message-layout">
       <section class="status-pane">
         <v-card class="status-card" elevation="2">
@@ -26,7 +26,13 @@
           <v-card-title class="message-card-title d-flex align-center">
             <span>消息列表</span>
             <v-spacer />
-            <v-btn class="batch-delete-btn" color="error" :disabled="!selected.length" size="small" @click="handleDelete">
+            <v-btn
+              class="batch-delete-btn"
+              color="error"
+              :disabled="!selected.length"
+              size="small"
+              @click="handleDelete"
+            >
               <v-icon>mdi-delete</v-icon>
               删除
             </v-btn>
@@ -35,14 +41,14 @@
             <v-data-table-server
               v-model="selected"
               class="message-table"
+              fixed-header
               :headers="headers"
+              hide-default-footer
               item-value="message"
               :items="messages"
               :items-length="totalCount"
               :items-per-page="pageSize"
               :page="pageIndex"
-              fixed-header
-              hide-default-footer
               :show-select="!smAndDown"
             >
               <template #item.messageId="{ item }">
@@ -93,10 +99,10 @@
               <span class="page-size-label">Items per page:</span>
               <v-select
                 v-model="pageSize"
-                :items="pageSizeOptions"
                 class="page-size-select"
                 density="compact"
                 hide-details
+                :items="pageSizeOptions"
                 variant="outlined"
                 @update:model-value="handlePageSizeChange"
               />
@@ -104,9 +110,9 @@
             <div class="page-range-text">{{ pageRangeText }}</div>
             <v-pagination
               v-model="pageIndex"
+              density="comfortable"
               :length="pageCount"
               :total-visible="7"
-              density="comfortable"
               @update:model-value="handlePageIndexChange"
             />
           </div>

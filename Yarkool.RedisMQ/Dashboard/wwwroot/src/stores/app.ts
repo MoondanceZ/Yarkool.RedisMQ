@@ -2,16 +2,21 @@
 import { defineStore } from 'pinia'
 import type { ServerInfoResponse, StatsResponse, TwentyFourHoursStatsResponse } from '@/apis/response/StatResponse'
 import { serverApi } from '@/apis'
+import { getStatsPollingInterval, getStatsPollingIntervalSeconds } from '@/utils/dashboardOptions'
 
-const now = new Date();
-const times: string[] = Array.from({ length: 12 }, (_, i) => {
-  const time = new Date(now.getTime() - (11 - i) * 5000); // 从过去的时间开始，每5秒一个点
+function formatTime (time: Date) {
   const hours = time.getHours().toString().padStart(2, '0');
   const minutes = time.getMinutes().toString().padStart(2, '0');
-  const seconds = (Math.floor(Number(time.getSeconds()) / 5) * 5)
-    .toString()
-    .padStart(2, '0');
+  const seconds = time.getSeconds().toString().padStart(2, '0');
+
   return `${hours}:${minutes}:${seconds}`;
+}
+
+const now = new Date();
+const statsPollingInterval = getStatsPollingInterval();
+const times: string[] = Array.from({ length: 12 }, (_, i) => {
+  const time = new Date(now.getTime() - (11 - i) * statsPollingInterval);
+  return formatTime(time);
 });
 
 export const useAppStore = defineStore('app', {
@@ -46,13 +51,7 @@ export const useAppStore = defineStore('app', {
           this.stats = response.data
           if(!isFirstTimeFetch){
             times.shift();
-            const time = new Date();
-            const hours = time.getHours().toString().padStart(2, '0');
-            const minutes = time.getMinutes().toString().padStart(2, '0');
-            const seconds = (Math.floor(Number(time.getSeconds()) / 5) * 5)
-              .toString()
-              .padStart(2, '0');
-            this.chart.realTimeChart.times.push(`${hours}:${minutes}:${seconds}`);
+            this.chart.realTimeChart.times.push(formatTime(new Date()));
 
             const publishSucceeded = newStats.publishSucceeded - oldStats.publishSucceeded;
             const publishFailed = newStats.publishFailed - oldStats.publishFailed;
@@ -70,7 +69,7 @@ export const useAppStore = defineStore('app', {
             this.chart.realTimeChart.chartData.consumeFailedData.push(consumeFailed < 0 ? 0 : consumeFailed);
             this.chart.realTimeChart.chartData.ackCountData.shift();
             this.chart.realTimeChart.chartData.ackCountData.push(ackCount < 0 ? 0 : ackCount);
-            this.ackSpeed = Number((ackCount / 5).toFixed(2));
+            this.ackSpeed = Number((ackCount / getStatsPollingIntervalSeconds()).toFixed(2));
           }
         } else {
           console.error('get stats error:', response.message)

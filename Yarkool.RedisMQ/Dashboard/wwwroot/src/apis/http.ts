@@ -6,8 +6,7 @@ switch (import.meta.env.MODE) {
     baseURL = import.meta.env.VITE_API_BASE_URL;
     break;
   default:
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    baseURL = (window as any).serverUrl || '';
+    baseURL = window.serverUrl || '';
     break
 }
 

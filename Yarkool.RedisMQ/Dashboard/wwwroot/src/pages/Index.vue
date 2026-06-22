@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="home-page">
+  <v-container class="home-page" fluid>
     <v-row>
       <v-col cols="12" md="9">
         <v-card class="pa-2" elevation="2">
@@ -9,7 +9,7 @@
       </v-col>
       <v-col cols="12" md="3">
         <v-row>
-          <v-col cols="6" sm="4" md="6">
+          <v-col cols="6" md="6" sm="4">
             <v-card
               class="stat-card cursor-pointer"
               elevation="2"
@@ -19,7 +19,7 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.queueCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="4" md="6">
+          <v-col cols="6" md="6" sm="4">
             <v-card
               class="stat-card cursor-pointer"
               elevation="2"
@@ -29,7 +29,7 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.consumerCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="4" md="6">
+          <v-col cols="6" md="6" sm="4">
             <v-card
               class="stat-card cursor-pointer"
               elevation="2"
@@ -39,7 +39,7 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.serverCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="4" md="6">
+          <v-col cols="6" md="6" sm="4">
             <v-card
               class="stat-card"
               elevation="2"
@@ -49,7 +49,7 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.realTimeStats?.pendingCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="4" md="6">
+          <v-col cols="6" md="6" sm="4">
             <v-card
               class="stat-card"
               elevation="2"
@@ -59,7 +59,7 @@
               <v-card-text class="text-h6 text-center text-red">{{ stats.realTimeStats?.failedCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="4" md="6">
+          <v-col cols="6" md="6" sm="4">
             <v-card
               class="stat-card"
               elevation="2"

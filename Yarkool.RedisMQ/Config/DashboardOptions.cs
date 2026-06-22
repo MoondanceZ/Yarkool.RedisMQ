@@ -18,7 +18,7 @@ public class DashboardOptions
     /// <summary>
     /// The interval the /stats endpoint should be polled with.
     /// </summary>
-    public int StatsPollingInterval { get; set; } = 2000;
+    public int StatsPollingInterval { get; set; } = 3000;
 
     /// <summary>
     /// Explicitly allows anonymous access for the CAP dashboard API, passing AllowAnonymous to the ASP.NET Core global authorization filter.

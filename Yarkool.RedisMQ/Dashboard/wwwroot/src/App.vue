@@ -3,7 +3,7 @@
     <v-app-bar class="app-bar" :elevation="2">
       <v-container class="app-bar-container d-flex align-center justify-center">
         <div class="brand-mark">
-          <img :src="logoUrl" alt="" class="brand-logo">
+          <img alt="" class="brand-logo" :src="logoUrl">
           <v-app-bar-title>Redis MQ Web</v-app-bar-title>
         </div>
 
@@ -71,6 +71,7 @@
   import { useAppStore } from '@/stores/app'
   import { computed, onMounted, onUnmounted } from 'vue'
   import logoUrl from '@/assets/logo.svg'
+  import { getStatsPollingInterval } from '@/utils/dashboardOptions'
 
   const theme = useTheme()
   const store = useAppStore()
@@ -100,10 +101,10 @@
     // 立即获取一次数据
     store.fetchStats()
 
-    // 设置定时器，每5秒获取一次数据
+    // 设置定时器
     statsTimer = setInterval(() => {
       store.fetchStats()
-    }, 5000)
+    }, getStatsPollingInterval())
   })
 
   onUnmounted(() => {
