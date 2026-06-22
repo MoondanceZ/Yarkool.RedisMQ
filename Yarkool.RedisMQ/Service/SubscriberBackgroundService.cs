@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 using FreeRedis;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,10 +42,6 @@ public class ConsumerBackgroundService
             var isDelayQueueConsumer = consumerExecutorDescriptor.IsDelayQueueConsumer;
             var prefetchCount = consumerExecutorDescriptor.PrefetchCount;
             var isAutoAck = consumerExecutorDescriptor.IsAutoAck;
-            var onMessageAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnMessageAsync))!;
-            var onMessageAsyncMethodInvoker = MethodInvoker.Create(onMessageAsyncMethod);
-            var onErrorAsyncMethod = consumerType.GetMethod(nameof(RedisMQConsumer<object>.OnErrorAsync));
-            var onErrorAsyncMethodInvoker = onErrorAsyncMethod == null ? null : MethodInvoker.Create(onErrorAsyncMethod);
             var queueNameKey = cacheKeyManager.GetQueueName(queueName);
 
             if (isDelayQueueConsumer)
@@ -80,7 +75,7 @@ public class ConsumerBackgroundService
                                         try
                                         {
                                             using var scope = serviceProvider.CreateScope();
-                                            var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
+                                            var consumer = (IRedisMQConsumerExecutor)scope.ServiceProvider.GetRequiredService(consumerType);
                                             message = data.fieldValues.MapToClass<BaseMessage>(Encoding.UTF8);
                                             messageHandler.MessageId = message.MessageId;
 
@@ -97,7 +92,7 @@ public class ConsumerBackgroundService
                                             pipe.EndPipe();
 
                                             //Execute message
-                                            await ((Task)onMessageAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, stoppingToken)!).ConfigureAwait(false);
+                                            await consumer.ExecuteAsync(messageContent, messageHandler, stoppingToken).ConfigureAwait(false);
 
                                             var isAcknowledged = isAutoAck || messageHandler.IsAcknowledged;
                                             if (isAcknowledged)
@@ -136,12 +131,9 @@ public class ConsumerBackgroundService
                                             try
                                             {
                                                 //Execute message
-                                                if (onErrorAsyncMethodInvoker != null)
-                                                {
-                                                    using var scope = serviceProvider.CreateScope();
-                                                    var consumer = scope.ServiceProvider.GetRequiredService(consumerType);
-                                                    await ((Task)onErrorAsyncMethodInvoker.Invoke(consumer, messageContent, messageHandler, ex, stoppingToken)!).ConfigureAwait(false);
-                                                }
+                                                using var scope = serviceProvider.CreateScope();
+                                                var consumer = (IRedisMQConsumerExecutor)scope.ServiceProvider.GetRequiredService(consumerType);
+                                                await consumer.ExecuteErrorAsync(messageContent, messageHandler, ex, stoppingToken).ConfigureAwait(false);
                                             }
                                             catch (Exception errorEx)
                                             {

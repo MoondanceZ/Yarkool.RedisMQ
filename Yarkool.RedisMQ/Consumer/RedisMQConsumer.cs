@@ -1,6 +1,13 @@
-﻿namespace Yarkool.RedisMQ;
+namespace Yarkool.RedisMQ;
 
-public abstract class RedisMQConsumer<TMessage>
+internal interface IRedisMQConsumerExecutor
+{
+    Task ExecuteAsync(object? message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken);
+
+    Task ExecuteErrorAsync(object? message, ConsumerMessageHandler messageHandler, Exception ex, CancellationToken cancellationToken);
+}
+
+public abstract class RedisMQConsumer<TMessage> : IRedisMQConsumerExecutor
 {
     /// <summary>
     /// On Message
@@ -22,5 +29,15 @@ public abstract class RedisMQConsumer<TMessage>
     public virtual Task OnErrorAsync(TMessage message, ConsumerMessageHandler messageHandler, Exception ex, CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
+    }
+
+    Task IRedisMQConsumerExecutor.ExecuteAsync(object? message, ConsumerMessageHandler messageHandler, CancellationToken cancellationToken)
+    {
+        return OnMessageAsync((TMessage)message!, messageHandler, cancellationToken);
+    }
+
+    Task IRedisMQConsumerExecutor.ExecuteErrorAsync(object? message, ConsumerMessageHandler messageHandler, Exception ex, CancellationToken cancellationToken)
+    {
+        return OnErrorAsync((TMessage)message!, messageHandler, ex, cancellationToken);
     }
 }
