@@ -1,17 +1,17 @@
 <template>
-  <v-container>
+  <v-container fluid class="home-page">
     <v-row>
-      <v-col cols="9">
+      <v-col cols="12" md="9">
         <v-card class="pa-2" elevation="2">
           <v-card-title>实时数据</v-card-title>
-          <div ref="chartRef" :style="{ height: '242px', width: '100%' }" />
+          <div ref="chartRef" class="chart-panel" />
         </v-card>
       </v-col>
-      <v-col cols="3">
+      <v-col cols="12" md="3">
         <v-row>
-          <v-col cols="6">
+          <v-col cols="6" sm="4" md="6">
             <v-card
-              class="cursor-pointer"
+              class="stat-card cursor-pointer"
               elevation="2"
               @click="router.push('/queue')"
             >
@@ -19,9 +19,9 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.queueCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="6" sm="4" md="6">
             <v-card
-              class="cursor-pointer"
+              class="stat-card cursor-pointer"
               elevation="2"
               @click="router.push('/queue')"
             >
@@ -29,9 +29,9 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.consumerCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="6" sm="4" md="6">
             <v-card
-              class="cursor-pointer"
+              class="stat-card cursor-pointer"
               elevation="2"
               @click="router.push('/server')"
             >
@@ -39,8 +39,9 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.serverInfo?.serverCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="6" sm="4" md="6">
             <v-card
+              class="stat-card"
               elevation="2"
               @click="router.push('/message')"
             >
@@ -48,8 +49,9 @@
               <v-card-text class="text-h6 text-center text-primary">{{ stats.realTimeStats?.pendingCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="6" sm="4" md="6">
             <v-card
+              class="stat-card"
               elevation="2"
               @click="router.push('/message?status=4')"
             >
@@ -57,8 +59,9 @@
               <v-card-text class="text-h6 text-center text-red">{{ stats.realTimeStats?.failedCount || 0 }}</v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6">
+          <v-col cols="6" sm="4" md="6">
             <v-card
+              class="stat-card"
               elevation="2"
               @click="router.push('/message')"
             >
@@ -73,7 +76,7 @@
       <v-col cols="12">
         <v-card class="pa-2" elevation="2">
           <v-card-title>24小时数据</v-card-title>
-          <div ref="twentyFourHoursChartRef" :style="{ height: '302px', width: '100%' }" />
+          <div ref="twentyFourHoursChartRef" class="chart-panel chart-panel-large" />
         </v-card>
       </v-col>
     </v-row>
@@ -314,6 +317,28 @@
 </script>
 
 <style scoped>
+.home-page {
+  max-width: 100%;
+}
+
+.chart-panel {
+  height: 242px;
+  width: 100%;
+}
+
+.chart-panel-large {
+  height: 302px;
+}
+
+.stat-card {
+  height: 100%;
+}
+
+.stat-card :deep(.v-card-title) {
+  white-space: normal;
+  word-break: keep-all;
+}
+
 .cursor-pointer {
   cursor: pointer;
   transition: transform 0.2s;
@@ -321,5 +346,29 @@
 
 .cursor-pointer:hover {
   transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+  .home-page {
+    padding-inline: 8px;
+  }
+
+  .chart-panel {
+    height: 220px;
+  }
+
+  .chart-panel-large {
+    height: 260px;
+  }
+
+  .stat-card :deep(.v-card-title) {
+    font-size: 14px !important;
+    line-height: 1.2;
+    padding: 12px 12px 4px;
+  }
+
+  .stat-card :deep(.v-card-text) {
+    padding: 4px 12px 12px;
+  }
 }
 </style>

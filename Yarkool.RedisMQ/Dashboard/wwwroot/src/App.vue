@@ -1,30 +1,30 @@
 <template>
   <v-app>
-    <v-app-bar :elevation="2">
-      <v-container class="d-flex align-center justify-center">
+    <v-app-bar class="app-bar" :elevation="2">
+      <v-container class="app-bar-container d-flex align-center justify-center">
         <v-app-bar-title>Redis MQ Web</v-app-bar-title>
 
         <v-spacer />
 
-        <div class="d-flex align-center">
-          <v-btn text to="/">
+        <div class="nav-actions d-flex align-center">
+          <v-btn class="nav-btn" text to="/">
             <v-icon>mdi-home</v-icon>
-            首页
+            <span class="nav-label">首页</span>
           </v-btn>
 
-          <v-btn text to="/message">
+          <v-btn class="nav-btn" text to="/message">
             <v-icon>mdi-message</v-icon>
-            消息
+            <span class="nav-label">消息</span>
           </v-btn>
 
-          <v-btn text to="/queue">
+          <v-btn class="nav-btn" text to="/queue">
             <v-icon>mdi-database</v-icon>
-            队列
+            <span class="nav-label">队列</span>
           </v-btn>
 
-          <v-btn text to="/server">
+          <v-btn class="nav-btn" text to="/server">
             <v-icon>mdi-server</v-icon>
-            服务器
+            <span class="nav-label">服务器</span>
           </v-btn>
 
           <v-btn icon @click="toggleTheme">
@@ -35,13 +35,13 @@
     </v-app-bar>
 
     <v-main>
-      <div class="py-4">
+      <div class="main-content py-4">
         <router-view />
       </div>
     </v-main>
 
-    <v-footer class="px-4 footer-custom flex-0" height="40">
-      <v-container class="d-flex justify-space-between align-center w-100 py-1">
+    <v-footer class="px-4 footer-custom flex-0">
+      <v-container class="footer-content d-flex justify-space-between align-center w-100 py-1">
         <div class="d-flex align-center">
           <v-icon class="me-2" color="primary" size="small">mdi-package-variant</v-icon>
           <span class="text-primary">Redis MQ: {{ stats.serverInfo?.redisMQVersion }}</span>
@@ -119,8 +119,57 @@
 <style scoped>
 .footer-custom {
   flex: 0 1 auto;
+  min-height: 40px;
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   font-size: 0.875rem;
+}
+
+.app-bar-container,
+.footer-content {
+  max-width: 100%;
+}
+
+.nav-actions {
+  gap: 4px;
+}
+
+.nav-btn {
+  min-width: 48px;
+}
+
+@media (max-width: 600px) {
+  .app-bar-container {
+    padding-inline: 8px;
+  }
+
+  .app-bar :deep(.v-toolbar-title) {
+    flex: 0 0 auto;
+    font-size: 16px;
+    margin-inline-start: 0;
+  }
+
+  .nav-actions {
+    gap: 0;
+  }
+
+  .nav-btn {
+    padding-inline: 8px;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .main-content {
+    padding-block: 8px !important;
+  }
+
+  .footer-content {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 4px;
+    padding-block: 8px !important;
+  }
 }
 
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container fluid class="queue-page">
     <v-row>
       <v-col cols="12">
         <v-card>
@@ -8,45 +8,48 @@
           </v-card-title>
 
           <v-card-text>
-            <v-data-table
-              fixed-header
-              :headers="headers"
-              hide-default-footer
-              :items="queues"
-              :loading="loading"
-            >
-              <template #item.status="{ item }">
-                <v-chip
-                  :color="getStatusColor(item.status)"
-                  size="small"
-                  :text="getStatusText(item.status)"
-                />
-              </template>
-              <template #item.isDelayQueue="{ item }">
-                <v-chip
-                  :color="item.isDelayQueue ? 'purple' : 'teal'"
-                  size="small"
-                >
-                  {{ item.isDelayQueue ? '延迟队列' : '普通队列' }}
-                </v-chip>
-              </template>
-              <template #item.consumerList="{ item }">
-                <div class="mb-2">
-                  <div
-                    v-for="consumer in item.consumerList"
-                    :key="consumer"
-                    class="mt-2"
+            <div class="table-wrap">
+              <v-data-table
+                class="queue-table"
+                fixed-header
+                :headers="headers"
+                hide-default-footer
+                :items="queues"
+                :loading="loading"
+              >
+                <template #item.status="{ item }">
+                  <v-chip
+                    :color="getStatusColor(item.status)"
+                    size="small"
+                    :text="getStatusText(item.status)"
+                  />
+                </template>
+                <template #item.isDelayQueue="{ item }">
+                  <v-chip
+                    :color="item.isDelayQueue ? 'purple' : 'teal'"
+                    size="small"
                   >
-                    <v-chip
-                      color="info"
-                      size="small"
+                    {{ item.isDelayQueue ? '延迟队列' : '普通队列' }}
+                  </v-chip>
+                </template>
+                <template #item.consumerList="{ item }">
+                  <div class="mb-2">
+                    <div
+                      v-for="consumer in item.consumerList"
+                      :key="consumer"
+                      class="mt-2"
                     >
-                      {{ consumer }}
-                    </v-chip>
+                      <v-chip
+                        color="info"
+                        size="small"
+                      >
+                        {{ consumer }}
+                      </v-chip>
+                    </div>
                   </div>
-                </div>
-              </template>
-            </v-data-table>
+                </template>
+              </v-data-table>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -60,22 +63,25 @@
           </v-card-title>
 
           <v-card-text>
-            <v-data-table
-              fixed-header
-              :headers="consumerHeaders"
-              hide-default-footer
-              :items="consumers"
-              :loading="loadingConsumers"
-            >
-              <template #item.queueName="{ item }">
-                <v-chip
-                  color="info"
-                  size="small"
-                >
-                  {{ item.queueName }}
-                </v-chip>
-              </template>
-            </v-data-table>
+            <div class="table-wrap">
+              <v-data-table
+                class="consumer-table"
+                fixed-header
+                :headers="consumerHeaders"
+                hide-default-footer
+                :items="consumers"
+                :loading="loadingConsumers"
+              >
+                <template #item.queueName="{ item }">
+                  <v-chip
+                    color="info"
+                    size="small"
+                  >
+                    {{ item.queueName }}
+                  </v-chip>
+                </template>
+              </v-data-table>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -159,4 +165,44 @@
 </script>
 
 <style scoped>
+.queue-page {
+  max-width: 100%;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.table-wrap :deep(.v-table__wrapper) {
+  overflow-x: auto;
+}
+
+.queue-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.queue-table :deep(.v-table__wrapper > table) {
+  min-width: 640px;
+}
+
+.consumer-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.consumer-table :deep(.v-table__wrapper > table) {
+  min-width: 640px;
+}
+
+@media (max-width: 600px) {
+  .queue-page {
+    padding-inline: 8px;
+  }
+
+  .queue-page :deep(.v-card-text) {
+    padding-inline: 8px;
+  }
+}
 </style>

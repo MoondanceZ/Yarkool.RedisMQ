@@ -1,28 +1,31 @@
 <template>
-  <v-container>
+  <v-container fluid class="server-page">
     <v-row>
       <v-col cols="12">
         <v-card>
           <v-card-title>服务器节点列表</v-card-title>
           <v-card-text>
-            <v-data-table
-              :headers="headers"
-              hide-default-footer
-              :items="servers"
-              :loading="loading"
-            >
-              <template #item.heartbeatTimestamp="{ item }">
-                {{ formatTimestamp(item.heartbeatTimestamp) }}
-              </template>
-              <template #item.status="{ item }">
-                <v-chip
-                  :color="getServerStatus(item.heartbeatTimestamp).color"
-                  size="small"
-                >
-                  {{ getServerStatus(item.heartbeatTimestamp).text }}
-                </v-chip>
-              </template>
-            </v-data-table>
+            <div class="table-wrap">
+              <v-data-table
+                class="server-table"
+                :headers="headers"
+                hide-default-footer
+                :items="servers"
+                :loading="loading"
+              >
+                <template #item.heartbeatTimestamp="{ item }">
+                  {{ formatTimestamp(item.heartbeatTimestamp) }}
+                </template>
+                <template #item.status="{ item }">
+                  <v-chip
+                    :color="getServerStatus(item.heartbeatTimestamp).color"
+                    size="small"
+                  >
+                    {{ getServerStatus(item.heartbeatTimestamp).text }}
+                  </v-chip>
+                </template>
+              </v-data-table>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -87,3 +90,37 @@
     }
   })
 </script>
+
+<style scoped>
+.server-page {
+  max-width: 100%;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.table-wrap :deep(.v-table__wrapper) {
+  overflow-x: auto;
+}
+
+.server-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.server-table :deep(.v-table__wrapper > table) {
+  min-width: 560px;
+}
+
+@media (max-width: 600px) {
+  .server-page {
+    padding-inline: 8px;
+  }
+
+  .server-page :deep(.v-card-text) {
+    padding-inline: 8px;
+  }
+}
+</style>

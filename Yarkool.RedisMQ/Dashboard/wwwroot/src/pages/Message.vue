@@ -1,10 +1,10 @@
 <template>
-  <v-container>
+  <v-container fluid class="message-page">
     <v-row>
-      <v-col cols="2">
-        <v-card>
+      <v-col cols="12" md="2">
+        <v-card class="status-card">
           <v-card-title>消息状态</v-card-title>
-          <v-list>
+          <v-list class="status-list">
             <v-list-item
               v-for="status in statusList"
               :key="status.value ?? 'All'"
@@ -21,71 +21,74 @@
           </v-list>
         </v-card>
       </v-col>
-      <v-col cols="10">
+      <v-col cols="12" md="10">
         <v-card>
-          <v-card-title class="d-flex align-center">
-            消息列表
+          <v-card-title class="message-card-title d-flex align-center">
+            <span>消息列表</span>
             <v-spacer />
-            <v-btn color="error" :disabled="!selected.length" @click="handleDelete">
+            <v-btn class="batch-delete-btn" color="error" :disabled="!selected.length" size="small" @click="handleDelete">
               <v-icon>mdi-delete</v-icon>
               删除
             </v-btn>
           </v-card-title>
-          <v-data-table-server
-            v-model="selected"
-            :headers="headers"
-            item-value="message"
-            :items="messages"
-            :items-length="totalCount"
-            :items-per-page="pageSize"
-            :page="pageIndex"
-            hide-default-footer
-            show-select
-          >
-            <template #item.messageId="{ item }">
-              {{ item.message.messageId }}
-            </template>
-            <template #item.queueName="{ item }">
-              {{ item.message.queueName }}
-            </template>
-            <template #item.status="{ item }">
-              <v-chip class="text-white" :color="getStatusColor(item.status)" size="small">
-                {{ MessageStatus[item.status] }}
-              </v-chip>
-            </template>
-            <template #item.delay="{ item }">
-              <span v-if="item.message.delayTime > 0">
-                延迟
-                <span class="text-info mx-1">{{ item.message.delayTime }}</span>
-                秒
-              </span>
-              <span v-else>-</span>
-            </template>
-            <template #item.createTime="{ item }">
-              {{ new Date(item.message.createTimestamp).toLocaleString() }}
-            </template>
-            <template #item.actions="{ item }">
-              <div class="d-flex">
-                <v-btn
-                  color="error"
-                  size="small"
-                  variant="text"
-                  @click="handleDeleteOne(item)"
-                >
-                  删除
-                </v-btn>
-                <v-divider inset vertical />
-                <v-btn
-                  color="primary"
-                  size="small"
-                  variant="text"
-                  @click="handleView(item)"
-                >
-                  查看
-                </v-btn>
-              </div>
-            </template>
-          </v-data-table-server>
+          <div class="message-table-wrap">
+            <v-data-table-server
+              v-model="selected"
+              class="message-table"
+              :headers="headers"
+              item-value="message"
+              :items="messages"
+              :items-length="totalCount"
+              :items-per-page="pageSize"
+              :page="pageIndex"
+              hide-default-footer
+              :show-select="!smAndDown"
+            >
+              <template #item.messageId="{ item }">
+                <span class="message-id">{{ item.message.messageId }}</span>
+              </template>
+              <template #item.queueName="{ item }">
+                {{ item.message.queueName }}
+              </template>
+              <template #item.status="{ item }">
+                <v-chip class="text-white" :color="getStatusColor(item.status)" size="small">
+                  {{ MessageStatus[item.status] }}
+                </v-chip>
+              </template>
+              <template #item.delay="{ item }">
+                <span v-if="item.message.delayTime > 0">
+                  延迟
+                  <span class="text-info mx-1">{{ item.message.delayTime }}</span>
+                  秒
+                </span>
+                <span v-else>-</span>
+              </template>
+              <template #item.createTime="{ item }">
+                {{ new Date(item.message.createTimestamp).toLocaleString() }}
+              </template>
+              <template #item.actions="{ item }">
+                <div class="row-actions">
+                  <v-btn
+                    color="error"
+                    size="small"
+                    variant="text"
+                    @click="handleDeleteOne(item)"
+                  >
+                    删除
+                  </v-btn>
+                  <v-divider inset vertical />
+                  <v-btn
+                    color="primary"
+                    size="small"
+                    variant="text"
+                    @click="handleView(item)"
+                  >
+                    查看
+                  </v-btn>
+                </div>
+              </template>
+            </v-data-table-server>
+          </div>
           <div class="message-pagination">
             <div class="page-size-control">
               <span class="page-size-label">Items per page:</span>
@@ -209,6 +212,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import { useDisplay } from 'vuetify'
   import { messageApi } from '@/apis';
   import type MessageResponse from '@/apis/response/MessageResponse';
   import { MessageStatus } from '@/types/MessageStatus';
@@ -218,15 +222,25 @@
   import type { DataTableHeader } from 'vuetify';
 
   const store = useAppStore();
+  const { smAndDown } = useDisplay();
   const selected = ref<MessageDataResponse[]>([]);
-  const headers = ref<DataTableHeader[]>([
-    { title: '消息ID', key: 'messageId' },
-    { title: '队列', key: 'queueName' },
-    { title: '状态', key: 'status', align: 'center' },
-    { title: '延迟', key: 'delay', align: 'center' },
+  const desktopHeaders: DataTableHeader[] = [
+    { title: '消息ID', key: 'messageId', minWidth: '240px' },
+    { title: '队列', key: 'queueName', minWidth: '100px' },
+    { title: '状态', key: 'status', align: 'center', width: '120px' },
+    { title: '延迟', key: 'delay', align: 'center', width: '100px' },
+    { title: '创建时间', key: 'createTime', width: '170px', align: 'center' },
+    { title: '操作', key: 'actions', sortable: false, width: '120px', align: 'center' },
+  ];
+  const mobileHeaders: DataTableHeader[] = [
+    { title: '消息ID', key: 'messageId', minWidth: '240px' },
+    { title: '队列', key: 'queueName', minWidth: '90px' },
+    { title: '状态', key: 'status', align: 'center', width: '100px' },
+    { title: '延迟', key: 'delay', align: 'center', width: '90px' },
     { title: '创建时间', key: 'createTime', width: '160px', align: 'center' },
-    { title: '操作', key: 'actions', sortable: false, width: '100px', align: 'center' },
-  ]);
+    { title: '操作', key: 'actions', sortable: false, width: '110px', align: 'center' },
+  ];
+  const headers = computed(() => smAndDown.value ? mobileHeaders : desktopHeaders);
   const messages = ref<MessageResponse[]>([]);
 
   // 分页参数
@@ -420,6 +434,10 @@
 </script>
 
 <style scoped>
+.message-page {
+  max-width: 100%;
+}
+
 .message-dialog {
   height: 80vh;
   display: flex;
@@ -445,6 +463,44 @@
   flex: 0 0 auto;
   min-width: 36px;
   justify-content: center;
+}
+
+.message-card-title {
+  gap: 12px;
+}
+
+.message-table-wrap {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.message-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.message-table :deep(.v-table__wrapper) {
+  overflow-x: auto;
+}
+
+.message-table :deep(.v-table__wrapper > table) {
+  min-width: 720px;
+}
+
+.message-id {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
 }
 
 .message-pagination {
@@ -480,6 +536,7 @@
 .dialog-content {
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-wrap: anywhere;
   padding: 16px;
 }
 
@@ -564,5 +621,121 @@
 
 .message-content::-webkit-scrollbar-thumb:hover {
   background: #888;
+}
+
+@media (max-width: 960px) {
+  .status-card :deep(.v-card-title) {
+    padding-bottom: 8px;
+  }
+
+  .status-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0 12px 12px;
+  }
+
+  .status-list :deep(.v-list-item) {
+    border-radius: 6px;
+    padding-inline: 8px;
+  }
+
+  .message-table {
+    min-width: 430px;
+  }
+}
+
+@media (max-width: 600px) {
+  .message-page {
+    padding-inline: 8px;
+  }
+
+  .status-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .status-list-item {
+    gap: 4px;
+  }
+
+  .status-label {
+    flex: 0 1 auto;
+    font-size: 14px;
+  }
+
+  .status-count {
+    min-width: 42px;
+  }
+
+  .message-card-title {
+    align-items: flex-start !important;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .message-card-title :deep(.v-spacer) {
+    display: none;
+  }
+
+  .message-card-title :deep(.v-btn) {
+    margin-left: auto;
+  }
+
+  .batch-delete-btn {
+    display: none;
+  }
+
+  .message-table {
+    min-width: 0;
+  }
+
+  .message-table :deep(.v-table__wrapper > table) {
+    min-width: 790px;
+  }
+
+  .message-table :deep(th),
+  .message-table :deep(td) {
+    padding-inline: 8px !important;
+  }
+
+  .message-id {
+    max-width: 240px;
+  }
+
+  .row-actions {
+    min-width: 100px;
+  }
+
+  .row-actions :deep(.v-btn) {
+    padding-inline: 4px;
+  }
+
+  .message-pagination {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .page-size-control {
+    justify-content: space-between;
+  }
+
+  .page-range-text {
+    text-align: center;
+  }
+
+  .message-pagination :deep(.v-pagination) {
+    justify-content: center;
+  }
+
+  .message-pagination :deep(.v-pagination__list) {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .message-dialog {
+    height: 92vh;
+  }
 }
 </style>
